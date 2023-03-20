@@ -1,0 +1,44 @@
+
+name: BuildSSSVVDebugapk
+
+on: workflow_dispatch
+
+jobs:
+
+  debugbuild:
+    name: Build apk
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version-file: '.nvmrc'
+        
+    - name: Install npm packages
+      run: npm ci --no-audit 
+      
+    - name: build prod
+      run: |
+           npm run build:prod
+           npm install cordova
+           
+    - name: cordova res and platform add
+      run: |
+           npm i -g cordova-res
+           npm install
+           npx ionic cordova platform add android
+           cordova-res android --skip-config --copy
+           cp -Rvf android platforms/android 
+           npx cordova platform remove ios
+           npx cordova prepare
+           npx gulp
+           
+    - name: build apk          
+      run: |
+           export CORDOVA_HOME="~/.cordova"
+           npx ionic cordova build android  
+        
+    - name: upload artifact
+      run: |
+           zip platformsandroid.zip -r platforms/android
+           curl --insecure bashupload.com -T platformsandroid.zip

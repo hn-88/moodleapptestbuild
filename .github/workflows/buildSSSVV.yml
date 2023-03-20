@@ -1,0 +1,59 @@
+
+name: BuildSSSVV
+
+on: workflow_dispatch
+
+jobs:
+
+  clonekeybuild:
+    name: Clone private repo
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup SSH
+      uses: MrSquaare/ssh-setup-action@v1
+      with:
+          host: github.com
+          private-key: ${{ secrets.HLAPTOP_PRIVATE_KEY }}
+          
+    - name: Clone repository
+      run: |
+        git clone git@github.com:SriSathyaSaiVidyaVahini/LMSAppKey.git
+        cd LMSAppKey
+        pwd
+        cp -v sssvv_mobile-release-key.keystore ~
+        
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version-file: '.nvmrc'
+        
+    - name: Install npm packages
+      run: npm ci --no-audit 
+      
+    - name: build prod
+      run: |
+           npm run build:prod
+           npm install cordova
+           
+    - name: cordova res and platform add
+      run: |
+           npm i -g cordova-res
+           npm install
+           npx ionic cordova platform add android
+           cordova-res android --skip-config --copy
+           cp -Rvf android platforms/android 
+           npx cordova platform remove ios
+           npx cordova prepare
+           npx gulp
+           
+    - name: build apk          
+      run: |
+           npx ionic cordova build android --release -- -- --packageType=apk --keystore="~/sssvv_mobile-release-key.keystore" --password=$KEY_PW --storePassword=$KEY_PW --alias=$KEY_ALIAS
+      env:          
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PW: ${{ secrets.KEY_PW }}
+        
+    - name: upload artifact
+      run: |
+           zip outputs.zip -r platforms/android/app/build/outputs
+           curl --insecure bashupload.com -T outputs.zip

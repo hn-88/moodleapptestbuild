@@ -36,7 +36,7 @@ jobs:
     - name: build apk          
       run: |
            export CORDOVA_HOME="~/.cordova"
-           npx ionic cordova build android  
+           npx ionic cordova build android --release -- -- --packageType=apk 
         
     - name: upload artifact
       run: |

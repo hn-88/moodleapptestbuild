@@ -20,7 +20,7 @@ jobs:
     - name: build prod
       run: |
            node -v
-           sdkmanager --list
+           #sdkmanager --list #command not found
            npm run build:prod
            npm install cordova           
            

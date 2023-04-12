@@ -27,16 +27,17 @@ jobs:
       run: |
            npm i -g cordova-res
            npm install
-           npx ionic cordova platform add android
+           #npx ionic cordova platform add android
            cordova-res android --skip-config --copy
-           cp -Rvf android platforms/android 
+           #cp -Rvf android platforms/android 
            npx cordova platform remove ios
            npx cordova prepare
            npx gulp
            
     - name: build apk          
       run: |
-           $PATH
+           #https://gist.github.com/felipepodesta/f72d7c76882a5457495e43a85a13efea
+           sdkmanager --list
            #npx ionic cordova build android
         
     - name: upload artifact

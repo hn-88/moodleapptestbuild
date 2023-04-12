@@ -20,7 +20,7 @@ jobs:
     - name: build prod
       run: |
            node -v           
-           npm run build:prod
+           #npm run build:prod
            npm install cordova           
            
     - name: cordova res and platform add
@@ -36,8 +36,8 @@ jobs:
            
     - name: build apk          
       run: |
-           export CORDOVA_HOME="~/.cordova"
-           npx ionic cordova build android
+           $PATH
+           #npx ionic cordova build android
         
     - name: upload artifact
       run: |

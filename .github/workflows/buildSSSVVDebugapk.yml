@@ -28,7 +28,7 @@ jobs:
            npm i -g cordova-res
            npm install
            npx ionic cordova platform add android
-           cordova platform version android
+           npx ionic cordova platform version android
            cordova-res android --skip-config --copy
            cp -Rvf android platforms/android 
            npx cordova platform remove ios

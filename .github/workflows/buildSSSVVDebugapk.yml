@@ -7,7 +7,7 @@ jobs:
 
   debugbuild:
     name: Build apk
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v3
@@ -19,14 +19,17 @@ jobs:
       
     - name: build prod
       run: |
+           node -v           
            npm run build:prod
            npm install cordova
+           cordova --version
            
     - name: cordova res and platform add
       run: |
            npm i -g cordova-res
            npm install
            npx ionic cordova platform add android
+           cordova platform version android
            cordova-res android --skip-config --copy
            cp -Rvf android platforms/android 
            npx cordova platform remove ios
@@ -36,7 +39,7 @@ jobs:
     - name: build apk          
       run: |
            export CORDOVA_HOME="~/.cordova"
-           npx ionic cordova build android --release -- -- --packageType=apk 
+           npx ionic cordova build android
         
     - name: upload artifact
       run: |

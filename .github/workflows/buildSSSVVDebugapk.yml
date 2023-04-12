@@ -21,8 +21,7 @@ jobs:
       run: |
            node -v           
            npm run build:prod
-           npm install cordova
-           cordova --version
+           npm install cordova           
            
     - name: cordova res and platform add
       run: |

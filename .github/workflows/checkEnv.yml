@@ -1,0 +1,36 @@
+
+name: checkEnv
+
+on: workflow_dispatch
+
+jobs:
+
+  debugbuild:
+    name: check for sdkmanager
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version-file: '.nvmrc'
+        
+    - name: Install npm packages
+      run: npm ci --no-audit 
+      
+    - name: build prod
+      run: |
+           node -v
+           echo $PATH
+           echo $JAVA_HOME
+           sdkmanager --list 
+           #command not found on latest
+           
+    - name: cordova res and platform add
+      run: |
+           pwd
+           
+    - name: build apk          
+      run: |
+           pwd
+        
+    

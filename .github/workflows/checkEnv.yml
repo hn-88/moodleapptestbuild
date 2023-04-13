@@ -17,7 +17,7 @@ jobs:
     - name: Install npm packages
       run: |
         npm install -g npm@7
-        npm install
+        npm install --force
         npm ci --no-audit
     - name: Production builds
       run: |

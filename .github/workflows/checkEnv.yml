@@ -6,31 +6,28 @@ on: workflow_dispatch
 jobs:
 
   debugbuild:
-    name: check for sdkmanager
+    name: check for old version of yml
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v1
       with:
-        node-version-file: '.nvmrc'
-        
+        node-version: '14'
     - name: Install npm packages
-      run: npm ci --no-audit 
-      
-    - name: build prod
       run: |
-           node -v
-           echo $PATH
-           echo $JAVA_HOME
-           sdkmanager --list 
-           #command not found on latest
-           
-    - name: cordova res and platform add
+        npm install -g npm@7
+        npm ci --no-audit
+    - name: Production builds
       run: |
-           pwd
-           
-    - name: build apk          
-      run: |
-           pwd
-        
-    
+        npm run build:prod
+        npm install cordova
+        npm i -g cordova-res
+        npm install
+        npx ionic cordova platform add android --verbose
+        cordova-res android --skip-config --copy
+        cp -Rvf android platforms/android 
+        npx cordova platform remove ios
+        npx cordova prepare
+        npx gulp
+        npx ionic cordova build android --prod

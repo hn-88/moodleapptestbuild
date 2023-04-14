@@ -17,14 +17,14 @@ jobs:
     - name: Install npm packages
       run: |
         npm install -g npm@7
-        npm install --save --save-exact --production
+        npm install --save --save-exact --production --legacy-peer-deps
         #npm ci --no-audit
     - name: Production builds
       run: |
         npm run build:prod
         npm install cordova
         npm i -g cordova-res
-        npm install --production
+        npm install --production --legacy-peer-deps
         npx ionic cordova platform add android --verbose
         cordova-res android --skip-config --copy
         cp -Rvf android platforms/android 

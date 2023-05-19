@@ -1,45 +1,34 @@
 
-name: BuildSSSVVDebugapk
+name: buildDebug
 
 on: workflow_dispatch
 
 jobs:
 
   debugbuild:
-    name: Build apk
+    name: check for old version of yml
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v1
       with:
-        node-version-file: '.nvmrc'
-        
+        node-version: '14'
     - name: Install npm packages
-      run: npm ci --no-audit 
-      
-    - name: build prod
       run: |
-           node -v
-           #sdkmanager --list #command not found
-           npm run build:prod
-           npm install cordova           
-           
-    - name: cordova res and platform add
+        npm install 
+    - name: Production builds
       run: |
-           npm i -g cordova-res
-           npm install
-           npx ionic cordova platform add android
-           cordova-res android --skip-config --copy
-           cp -Rvf android platforms/android 
-           npx cordova platform remove ios
-           npx cordova prepare
-           npx gulp
-           
-    - name: build apk          
-      run: |
-           npx ionic cordova build android
-        
-    - name: upload artifact
-      run: |
-           zip platformsandroid.zip -r platforms/android
-           curl --insecure bashupload.com -T platformsandroid.zip
+        npm run build:prod
+        echo "Completed npm run build:prod."
+        echo "Installing cordova etc..."
+        npm install cordova
+        npm i -g cordova-res
+        npm install 
+        npx ionic cordova platform add android@11.0.0
+        cordova-res android --skip-config --copy
+        cp -Rvf android platforms/android 
+        npx cordova platform remove ios
+        npx cordova prepare
+        npx gulp
+        npx ionic cordova build android --prod

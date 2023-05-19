@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import { NgModule } from '@angular/core';
 
 import { AddonUserProfileFieldCheckboxModule } from './checkbox/checkbox.module';
@@ -28,4 +29,4 @@ import { AddonUserProfileFieldTextModule } from './text/text.module';
         AddonUserProfileFieldTextModule,
     ],
 })
-export class AddonUserProfileFieldModule { }
+export class AddonUserProfileFieldModule {}

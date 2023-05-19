@@ -30,13 +30,18 @@
                             [courseId]="courseId">
                         </core-user-avatar>
                         <div class="addon-mod-forum-post-author">
-                            <span *ngIf="post.author && post.author.fullname">{{post.author.fullname}}</span>
-                            <p *ngIf="post.author && post.author.groups" class="core-groupname">
-                                <ng-container *ngFor="let group of post.author.groups">
+                            <span *ngIf="post.author && post.author.fullname" class="core-discussionusername">
+                                {{ post.author.fullname }}
+                            </span>
+                            <div *ngIf="post.author && post.author.groups">
+                                <p *ngFor="let group of post.author.groups" class="core-groupname">
                                     <ion-icon name="fas-users" [attr.aria-label]="'addon.mod_forum.group' | translate">
-                                    </ion-icon> {{ group.name }}
-                                </ng-container>
-                            </p>
+                                    </ion-icon>
+                                    <core-format-text [text]="group.name" contextLevel="course" [contextInstanceId]="courseId"
+                                        [wsNotFiltered]="true">
+                                    </core-format-text>
+                                </p>
+                            </div>
                             <p *ngIf="post.timecreated">{{post.timecreated * 1000 | coreFormatDate: "strftimerecentfull"}}</p>
                             <p *ngIf="!post.timecreated">
                                 <ion-icon name="fas-clock" aria-hidden="true"></ion-icon> {{ 'core.notsent' | translate }}
@@ -126,7 +131,7 @@
                 <ion-icon *ngIf="advanced" name="fas-chevron-down" slot="start" aria-hidden="true" class="expandable-status-icon">
                 </ion-icon>
                 <ion-label>
-                    <h2>{{ 'addon.mod_forum.advanced' | translate }}</h2>
+                    <h3 class="item-heading">{{ 'addon.mod_forum.advanced' | translate }}</h3>
                 </ion-label>
             </ion-item>
             <div *ngIf="advanced" [id]="'addon-forum-reply-edit-form-advanced-' + uniqueId">

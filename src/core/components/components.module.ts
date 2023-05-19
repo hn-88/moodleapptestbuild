@@ -33,7 +33,6 @@ import { CoreDynamicComponent } from './dynamic-component/dynamic-component';
 import { CoreEmptyBoxComponent } from './empty-box/empty-box';
 import { CoreFileComponent } from './file/file';
 import { CoreFilesComponent } from './files/files';
-import { CoreIconComponent } from './icon/icon';
 import { CoreIframeComponent } from './iframe/iframe';
 import { CoreInfiniteLoadingComponent } from './infinite-loading/infinite-loading';
 import { CoreInputErrorsComponent } from './input-errors/input-errors';
@@ -64,6 +63,7 @@ import { CoreSwipeNavigationTourComponent } from './swipe-navigation-tour/swipe-
 import { CoreMessageComponent } from './message/message';
 import { CoreGroupSelectorComponent } from './group-selector/group-selector';
 import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-button-modal';
+import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
 
 @NgModule({
     declarations: [
@@ -81,7 +81,6 @@ import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-
         CoreFileComponent,
         CoreFilesComponent,
         CoreGroupSelectorComponent,
-        CoreIconComponent,
         CoreIframeComponent,
         CoreInfiniteLoadingComponent,
         CoreInputErrorsComponent,
@@ -110,6 +109,7 @@ import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-
         CoreHorizontalScrollControlsComponent,
         CoreSwipeNavigationTourComponent,
         CoreRefreshButtonModalComponent,
+        CoreSheetModalComponent,
     ],
     imports: [
         CommonModule,
@@ -134,7 +134,6 @@ import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-
         CoreFileComponent,
         CoreFilesComponent,
         CoreGroupSelectorComponent,
-        CoreIconComponent,
         CoreIframeComponent,
         CoreInfiniteLoadingComponent,
         CoreInputErrorsComponent,
@@ -163,6 +162,7 @@ import { CoreRefreshButtonModalComponent } from './refresh-button-modal/refresh-
         CoreHorizontalScrollControlsComponent,
         CoreSwipeNavigationTourComponent,
         CoreRefreshButtonModalComponent,
+        CoreSheetModalComponent,
     ],
 })
 export class CoreComponentsModule {}

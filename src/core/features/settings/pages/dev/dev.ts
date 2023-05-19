@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CoreConstants } from '@/core/constants';
 import { Component, OnInit } from '@angular/core';
+import { CoreLoginHelperProvider } from '@features/login/services/login-helper';
+import { CoreSettingsHelper } from '@features/settings/services/settings-helper';
 import { CoreSitePlugins } from '@features/siteplugins/services/siteplugins';
 import { CoreUserTours } from '@features/usertours/services/user-tours';
+import { CoreConfig } from '@services/config';
 import { CorePlatform } from '@services/platform';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -39,6 +43,9 @@ export class CoreSettingsDevPage implements OnInit {
     pluginStylesCount = 0;
     sitePlugins: CoreSitePluginsBasicInfo[] = [];
     userToursEnabled = true;
+    stagingSitesCount = 0;
+    enableStagingSites?: boolean;
+    previousEnableStagingSites?: boolean;
 
     disabledFeatures: string[] = [];
 
@@ -52,6 +59,13 @@ export class CoreSettingsDevPage implements OnInit {
         this.safeAreaChanged();
 
         this.siteId = CoreSites.getCurrentSite()?.getId();
+
+        this.stagingSitesCount = CoreConstants.CONFIG.sites.filter((site) => site.staging).length;
+
+        if (this.stagingSitesCount) {
+            this.enableStagingSites = await CoreSettingsHelper.hasEnabledStagingSites();
+            this.previousEnableStagingSites = this.enableStagingSites;
+        }
 
         if (!this.siteId) {
             return;
@@ -149,7 +163,24 @@ export class CoreSettingsDevPage implements OnInit {
      */
     async resetUserTours(): Promise<void> {
         await CoreUserTours.resetTours();
+
+        await CoreConfig.delete(CoreLoginHelperProvider.ONBOARDING_DONE);
+
         CoreDomUtils.showToast('User tours have been reseted');
+    }
+
+    async setEnabledStagingSites(enabled: boolean): Promise<void> {
+        if (this.enableStagingSites === this.previousEnableStagingSites) {
+            return;
+        }
+
+        try {
+            await CoreSettingsHelper.setEnabledStagingSites(enabled);
+            this.previousEnableStagingSites = enabled;
+        } catch (error) {
+            this.enableStagingSites = !enabled;
+            CoreDomUtils.showErrorModal(error);
+        }
     }
 
 }

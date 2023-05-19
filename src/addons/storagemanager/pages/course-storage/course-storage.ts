@@ -492,6 +492,11 @@ export class AddonStorageManagerCourseStoragePage implements OnInit, OnDestroy {
 
             await this.updateModulesSizes(modules, section);
             CoreCourseHelper.calculateSectionsStatus(this.sections, this.courseId, false, false);
+
+            // For delete all, reset all section sizes so icons are updated.
+            if (this.totalSize === 0) {
+                this.sections.map(section => section.totalSize = 0);
+            }
             this.changeDetectorRef.markForCheck();
         }
     }
@@ -680,6 +685,7 @@ export class AddonStorageManagerCourseStoragePage implements OnInit, OnDestroy {
                     isGuest: this.isGuest,
                 },
             );
+            await Promise.all(this.sections.map(section => this.updateModulesSizes(section.modules, section)));
             this.changeDetectorRef.markForCheck();
         } catch (error) {
             if (this.isDestroyed) {

@@ -201,7 +201,7 @@ class behat_app_helper extends behat_base {
             $restart = true;
 
             // Reset its size.
-            $this->resize_window($this->windowsize, true);
+            $this->resize_app_window();
 
             // Visit the Ionic URL.
             $this->getSession()->visit($this->get_app_url());
@@ -595,5 +595,17 @@ EOF;
         }
 
         return null;
+    }
+
+    /**
+     * Resize window to have app dimensions.
+     */
+    protected function resize_app_window(int $width = 500, int $height = 720) {
+        $offset = $this->evaluate_script("{
+            x: window.outerWidth - document.body.offsetWidth,
+            y: window.outerHeight - window.innerHeight,
+        }");
+
+        $this->getSession()->getDriver()->resizeWindow($width + $offset['x'], $height + $offset['y']);
     }
 }

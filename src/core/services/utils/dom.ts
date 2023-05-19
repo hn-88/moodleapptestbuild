@@ -46,18 +46,19 @@ import { CoreViewerImageComponent } from '@features/viewer/components/image/imag
 import { CoreFormFields, CoreForms } from '../../singletons/form';
 import { CoreModalLateralTransitionEnter, CoreModalLateralTransitionLeave } from '@classes/modal-lateral-transition';
 import { CoreZoomLevel } from '@features/settings/services/settings-helper';
-import { AddonFilterMultilangHandler } from '@addons/filter/multilang/services/handlers/multilang';
 import { CoreSites } from '@services/sites';
 import { NavigationStart } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
-import { CoreComponentsRegistry } from '@singletons/components-registry';
+import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CoreDom } from '@singletons/dom';
 import { CoreNetwork } from '@services/network';
 import { CoreSiteError } from '@classes/errors/siteerror';
 import { CoreUserSupport } from '@features/user/services/support';
 import { CoreErrorInfoComponent } from '@components/error-info/error-info';
-import { CoreSite } from '@classes/site';
+import { CorePlatform } from '@services/platform';
+import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { CoreLang } from '@services/lang';
 
 /*
  * "Utils" service with helper functions for UI, DOM elements and HTML code.
@@ -134,7 +135,7 @@ export class CoreDomUtilsProvider {
         const getAvailableBytes = async (): Promise<number | null> => {
             const availableBytes = await CoreFile.calculateFreeSpace();
 
-            if (CoreApp.isAndroid()) {
+            if (CorePlatform.isAndroid()) {
                 return availableBytes;
             } else {
                 // Space calculation is not accurate on iOS, but it gets more accurate when space is lower.
@@ -153,7 +154,7 @@ export class CoreDomUtilsProvider {
             } else {
                 const availableSize = CoreTextUtils.bytesToSize(availableBytes, 2);
 
-                if (CoreApp.isAndroid() && size.size > availableBytes - CoreConstants.MINIMUM_FREE_SPACE) {
+                if (CorePlatform.isAndroid() && size.size > availableBytes - CoreConstants.MINIMUM_FREE_SPACE) {
                     throw new CoreError(
                         Translate.instant(
                             'core.course.insufficientavailablespace',
@@ -339,7 +340,7 @@ export class CoreDomUtilsProvider {
 
             if (focusElement === document.activeElement) {
                 await CoreUtils.nextTick();
-                if (CoreApp.isAndroid() && this.supportsInputKeyboard(focusElement)) {
+                if (CorePlatform.isAndroid() && this.supportsInputKeyboard(focusElement)) {
                     // On some Android versions the keyboard doesn't open automatically.
                     CoreApp.openKeyboard();
                 }
@@ -666,10 +667,10 @@ export class CoreDomUtilsProvider {
      *
      * @param element The root element of the component/directive.
      * @returns The instance, undefined if not found.
-     * @deprecated since 4.0.0. Use CoreComponentsRegistry instead.
+     * @deprecated since 4.0.0. Use CoreDirectivesRegistry instead.
      */
     getInstanceByElement<T = unknown>(element: Element): T | undefined {
-        return CoreComponentsRegistry.resolve<T>(element) ?? undefined;
+        return CoreDirectivesRegistry.resolve<T>(element) ?? undefined;
     }
 
     /**
@@ -1169,7 +1170,7 @@ export class CoreDomUtilsProvider {
 
         if (hasHTMLTags && !CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('3.7')) {
             // Treat multilang.
-            options.message = await AddonFilterMultilangHandler.filter(<string> options.message);
+            options.message = await CoreLang.filterMultilang(<string> options.message);
         }
 
         const alertId = <string> Md5.hashAsciiStr((options.header || '') + '#' + (options.message || ''));
@@ -1369,11 +1370,11 @@ export class CoreDomUtilsProvider {
         if (typeof error !== 'string' && 'title' in error && error.title) {
             alertOptions.header = error.title || undefined;
         } else if (message === Translate.instant('core.sitenotfoundhelp')) {
-            alertOptions.header = Translate.instant('core.sitenotfound');
+            alertOptions.header = Translate.instant('core.cannotconnect');
         } else if (this.isSiteUnavailableError(message)) {
             alertOptions.header = CoreSites.isLoggedIn()
                 ? Translate.instant('core.connectionlost')
-                : Translate.instant('core.cannotconnect', { $a: CoreSite.MINIMUM_MOODLE_VERSION });
+                : Translate.instant('core.cannotconnect');
         } else {
             alertOptions.header = Translate.instant('core.error');
         }
@@ -1443,7 +1444,7 @@ export class CoreDomUtilsProvider {
         }
 
         return this.showErrorModal(
-            typeof errorMessage == 'string' && errorMessage ? error! : defaultError,
+            typeof errorMessage == 'string' && errorMessage && error ? error : defaultError,
             needsTranslate,
             autocloseTime,
         );
@@ -1530,7 +1531,7 @@ export class CoreDomUtilsProvider {
             buttons: buttons,
         });
 
-        const isDevice = CoreApp.isAndroid() || CoreApp.isIOS();
+        const isDevice = CorePlatform.isAndroid() || CorePlatform.isIOS();
         if (!isDevice) {
             // Treat all anchors so they don't override the app.
             const alertMessageEl: HTMLElement | null = alert.querySelector('.alert-message');
@@ -1719,10 +1720,10 @@ export class CoreDomUtilsProvider {
      *
      * @param element The root element of the component/directive.
      * @param instance The instance to store.
-     * @deprecated since 4.0.0. Use CoreComponentsRegistry instead.
+     * @deprecated since 4.0.0. Use CoreDirectivesRegistry instead.
      */
     storeInstanceByElement(element: Element, instance: unknown): void {
-        CoreComponentsRegistry.register(element, instance);
+        CoreDirectivesRegistry.register(element, instance);
     }
 
     /**
@@ -1916,32 +1917,62 @@ export class CoreDomUtilsProvider {
      * @param element The element to search in.
      * @returns Promise resolved with a boolean: whether there was any image to load.
      */
-    async waitForImages(element: HTMLElement): Promise<boolean> {
+    waitForImages(element: HTMLElement): CoreCancellablePromise<boolean> {
         const imgs = Array.from(element.querySelectorAll('img'));
-        const promises: Promise<void>[] = [];
-        let hasImgToLoad = false;
 
-        imgs.forEach((img) => {
-            if (img && !img.complete) {
-                hasImgToLoad = true;
+        if (imgs.length === 0) {
+            return CoreCancellablePromise.resolve(false);
+        }
 
-                // Wait for image to load or fail.
-                promises.push(new Promise((resolve) => {
-                    const imgLoaded = (): void => {
-                        resolve();
-                        img.removeEventListener('load', imgLoaded);
-                        img.removeEventListener('error', imgLoaded);
+        let completedImages = 0;
+        let waitedForImages = false;
+        const listeners: WeakMap<Element, () => unknown> = new WeakMap();
+        const imageCompleted = (resolve: (result: boolean) => void) => {
+            completedImages++;
+
+            if (completedImages === imgs.length) {
+                resolve(waitedForImages);
+            }
+        };
+
+        return new CoreCancellablePromise<boolean>(
+            resolve => {
+                for (const img of imgs) {
+                    if (!img || img.complete) {
+                        imageCompleted(resolve);
+
+                        continue;
+                    }
+
+                    waitedForImages = true;
+
+                    // Wait for image to load or fail.
+                    const imgCompleted = (): void => {
+                        img.removeEventListener('load', imgCompleted);
+                        img.removeEventListener('error', imgCompleted);
+
+                        imageCompleted(resolve);
                     };
 
-                    img.addEventListener('load', imgLoaded);
-                    img.addEventListener('error', imgLoaded);
-                }));
-            }
-        });
+                    img.addEventListener('load', imgCompleted);
+                    img.addEventListener('error', imgCompleted);
 
-        await Promise.all(promises);
+                    listeners.set(img, imgCompleted);
+                }
+            },
+            () => {
+                imgs.forEach(img => {
+                    const listener = listeners.get(img);
 
-        return hasImgToLoad;
+                    if (!listener) {
+                        return;
+                    }
+
+                    img.removeEventListener('load', listener);
+                    img.removeEventListener('error', listener);
+                });
+            },
+        );
     }
 
     /**
@@ -1990,7 +2021,7 @@ export class CoreDomUtilsProvider {
      * @returns Promise resolved when done.
      */
     async waitForResizeDone(windowWidth?: number, windowHeight?: number, retries = 0): Promise<void> {
-        if (!CoreApp.isIOS()) {
+        if (!CorePlatform.isIOS()) {
             return; // Only wait in iOS.
         }
 
@@ -2032,12 +2063,17 @@ export class CoreDomUtilsProvider {
      *
      * @param className Class name.
      * @param enable Whether to add or remove the class.
+     * @param options Legacy options, deprecated since 4.1.
      */
-    toggleModeClass(className: string, enable?: boolean): void {
+    toggleModeClass(
+        className: string,
+        enable = false,
+        options: { includeLegacy: boolean } = { includeLegacy: false },
+    ): void {
         document.documentElement.classList.toggle(className, enable);
 
         // @deprecated since 4.1
-        document.body.classList.toggle(className, enable);
+        document.body.classList.toggle(className, enable && options.includeLegacy);
     }
 
 }

@@ -15,7 +15,6 @@
 import { Injectable } from '@angular/core';
 
 import { CoreError } from '@classes/errors/error';
-import { CoreSite } from '@classes/site';
 import { CoreCourseActivitySyncBaseProvider } from '@features/course/classes/activity-sync';
 import { CoreCourse, CoreCourseModuleBasicInfo } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
@@ -24,7 +23,7 @@ import { CoreQuestion, CoreQuestionQuestionParsed } from '@features/question/ser
 import { CoreQuestionDelegate } from '@features/question/services/question-delegate';
 import { CoreNetwork } from '@services/network';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreSync } from '@services/sync';
+import { CoreSync, CoreSyncResult } from '@services/sync';
 import { CoreUtils } from '@services/utils/utils';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
@@ -306,18 +305,17 @@ export class AddonModQuizSyncProvider extends CoreCourseActivitySyncBaseProvider
 
         // Get all the offline attempts for the quiz. It should always be 0 or 1 attempt
         const offlineAttempts = await AddonModQuizOffline.getQuizAttempts(quiz.id, siteId);
+        const offlineAttempt = offlineAttempts.pop();
 
-        if (!offlineAttempts.length) {
+        if (!offlineAttempt) {
             // Nothing to sync, finish.
             return this.finishSync(siteId, quiz, courseId, warnings);
         }
 
         if (!CoreNetwork.isOnline()) {
             // Cannot sync in offline.
-            throw new CoreError(Translate.instant('core.cannotconnect', { $a: CoreSite.MINIMUM_MOODLE_VERSION }));
+            throw new CoreError(Translate.instant('core.cannotconnect'));
         }
-
-        const offlineAttempt = offlineAttempts.pop()!;
 
         // Now get the list of online attempts to make sure this attempt exists and isn't finished.
         const onlineAttempts = await AddonModQuiz.getUserAttempts(quiz.id, modOptions);
@@ -484,10 +482,8 @@ export const AddonModQuizSync = makeSingleton(AddonModQuizSyncProvider);
 /**
  * Data returned by a quiz sync.
  */
-export type AddonModQuizSyncResult = {
-    warnings: string[]; // List of warnings.
+export type AddonModQuizSyncResult = CoreSyncResult & {
     attemptFinished: boolean; // Whether an attempt was finished in the site due to the sync.
-    updated: boolean;
 };
 
 /**

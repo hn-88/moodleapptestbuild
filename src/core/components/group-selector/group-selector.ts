@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ChangeDetectionStrategy,
+} from '@angular/core';
 import { CoreGroupInfo } from '@services/groups';
-import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Component to display a group selector.
@@ -24,20 +29,12 @@ import { CoreUtils } from '@services/utils/utils';
     templateUrl: 'group-selector.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CoreGroupSelectorComponent implements OnInit {
+export class CoreGroupSelectorComponent {
 
     @Input() groupInfo?: CoreGroupInfo;
     @Input() multipleGroupsMessage?: string;
     @Input() selected!: number;
+    @Input() courseId?: number;
     @Output() selectedChange = new EventEmitter<number>();
-
-    id!: number;
-
-    /**
-     * @inheritdoc
-     */
-    ngOnInit(): void {
-        this.id = CoreUtils.getUniqueId('CoreGroupSelectorComponent');
-    }
 
 }

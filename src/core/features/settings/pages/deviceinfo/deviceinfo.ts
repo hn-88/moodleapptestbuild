@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreApp } from '@services/app';
 import { Component, OnDestroy } from '@angular/core';
 import { CoreConstants } from '@/core/constants';
 import { CoreLocalNotifications } from '@services/local-notifications';
@@ -28,6 +27,7 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
 import { CoreNetwork } from '@services/network';
+import { CoreLoginHelper } from '@features/login/services/login-helper';
 
 /**
  * Device Info to be shown and copied to clipboard.
@@ -111,10 +111,10 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
 
         if (CorePlatform.isMobile()) {
             this.deviceInfo.deviceType = CorePlatform.is('tablet') ? 'tablet' : 'phone';
-            if (CoreApp.isAndroid()) {
+            if (CorePlatform.isAndroid()) {
                 this.deviceInfo.deviceOs = 'android';
                 this.deviceOsTranslated = 'Android';
-            } else if (CoreApp.isIOS()) {
+            } else if (CorePlatform.isIOS()) {
                 this.deviceInfo.deviceOs = 'ios';
                 this.deviceOsTranslated = 'iOS';
             } else {
@@ -168,10 +168,6 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         }
 
         const currentSite = sitesProvider.getCurrentSite();
-
-        this.deviceInfo.siteUrl = (currentSite?.getURL()) ||
-            (typeof CoreConstants.CONFIG.siteurl == 'string' && CoreConstants.CONFIG.siteurl) || undefined;
-        this.deviceInfo.isPrefixedUrl = !!CoreConstants.CONFIG.siteurl;
         this.deviceInfo.siteId = currentSite?.getId();
         this.deviceInfo.siteVersion = currentSite?.getInfo()?.release;
 
@@ -190,11 +186,20 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
      * Async part of the constructor.
      */
     protected async asyncInit(): Promise<void> {
+        const sitesProvider = CoreSites.instance;
         const fileProvider = CoreFile.instance;
 
         const lang = await CoreLang.getCurrentLanguage();
         this.deviceInfo.currentLanguage = lang;
         this.currentLangName = CoreConstants.CONFIG.languages[lang];
+
+        const currentSite = sitesProvider.getCurrentSite();
+        const isSingleFixedSite = await CoreLoginHelper.isSingleFixedSite();
+        const sites = await CoreLoginHelper.getAvailableSites();
+        const firstUrl = isSingleFixedSite && sites[0].url;
+
+        this.deviceInfo.siteUrl = currentSite?.getURL() || firstUrl || undefined;
+        this.deviceInfo.isPrefixedUrl = !!sites.length;
 
         if (fileProvider.isAvailable()) {
             const basepath = await fileProvider.getBasePath();

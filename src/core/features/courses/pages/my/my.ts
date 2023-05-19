@@ -14,7 +14,7 @@
 
 import { AddonBlockMyOverviewComponent } from '@addons/block/myoverview/components/myoverview/myoverview';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { AsyncComponent } from '@classes/async-component';
+import { AsyncDirective } from '@classes/async-directive';
 import { PageLoadsManager } from '@classes/page-loads-manager';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CoreBlockComponent } from '@features/block/components/block/block';
@@ -42,7 +42,7 @@ import { CoreCourses } from '../../services/courses';
         useClass: PageLoadsManager,
     }],
 })
-export class CoreCoursesMyCoursesPage implements OnInit, OnDestroy, AsyncComponent {
+export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
 
     @ViewChild(CoreBlockComponent) block!: CoreBlockComponent;
 
@@ -61,9 +61,9 @@ export class CoreCoursesMyCoursesPage implements OnInit, OnDestroy, AsyncCompone
 
     constructor(protected loadsManager: PageLoadsManager) {
         // Refresh the enabled flags if site is updated.
-        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
+        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, async () => {
             this.downloadCoursesEnabled = !CoreCourses.isDownloadCoursesDisabledInSite();
-            this.loadSiteName();
+            await this.loadSiteName();
 
         }, CoreSites.getCurrentSiteId());
 
@@ -78,13 +78,13 @@ export class CoreCoursesMyCoursesPage implements OnInit, OnDestroy, AsyncCompone
     /**
      * @inheritdoc
      */
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
         this.downloadCoursesEnabled = !CoreCourses.isDownloadCoursesDisabledInSite();
 
         const deepLinkManager = new CoreMainMenuDeepLinkManager();
         deepLinkManager.treatLink();
 
-        this.loadSiteName();
+        await this.loadSiteName();
 
         this.loadContent(true);
     }
@@ -143,8 +143,9 @@ export class CoreCoursesMyCoursesPage implements OnInit, OnDestroy, AsyncCompone
     /**
      * Load the site name.
      */
-    protected loadSiteName(): void {
-        this.siteName = CoreSites.getRequiredCurrentSite().getSiteName() || '';
+    protected async loadSiteName(): Promise<void> {
+        const site = CoreSites.getRequiredCurrentSite();
+        this.siteName = await site.getSiteName() || '';
     }
 
     /**

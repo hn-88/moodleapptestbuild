@@ -11,7 +11,7 @@
     </core-context-menu>
 
     <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [attr.aria-label]="'core.info' | translate">
-        <ion-icon name="fas-info-circle" slot="icon-only" aria-hidden="true"></ion-icon>
+        <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true"></ion-icon>
     </ion-button>
 </core-navbar-buttons>
 
@@ -26,7 +26,7 @@
     <!-- Offline disabled. -->
     <ion-card class="core-warning-card" *ngIf="!siteCanDownload && playing">
         <ion-item>
-            <ion-icon name="fas-exclamation-triangle" slot="start" aria-hidden="true"></ion-icon>
+            <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
             <ion-label>
                 {{ 'core.h5p.offlinedisabled' | translate }} {{ 'addon.mod_h5pactivity.offlinedisabledwarning' | translate }}
             </ion-label>
@@ -36,7 +36,7 @@
     <!-- Preview mode. -->
     <ion-card class="core-warning-card" *ngIf="accessInfo && !trackComponent">
         <ion-item>
-            <ion-icon name="fas-exclamation-triangle" slot="start" aria-hidden="true"></ion-icon>
+            <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
             <ion-label>
                 {{ 'addon.mod_h5pactivity.previewmode' | translate }}
             </ion-label>
@@ -57,14 +57,15 @@
         <ion-item class="ion-text-center" *ngIf="downloading">
             <ion-label>
                 <ion-spinner [attr.aria-label]="'core.loading' | translate"></ion-spinner>
-                <h2 *ngIf="progressMessage">{{ progressMessage | translate }}</h2>
+                <p class="item-heading" *ngIf="progressMessage">{{ progressMessage | translate }}</p>
                 <core-progress-bar *ngIf="showPercentage" [progress]="percentage" [a11yText]="progressMessage"></core-progress-bar>
             </ion-label>
         </ion-item>
     </ion-list>
 
     <core-h5p-iframe *ngIf="playing" [fileUrl]="fileUrl" [displayOptions]="displayOptions" [onlinePlayerUrl]="onlinePlayerUrl"
-        [trackComponent]="trackComponent" [contextId]="h5pActivity?.context" [enableInAppFullscreen]="true">
+        [trackComponent]="trackComponent" [contextId]="h5pActivity?.context" [enableInAppFullscreen]="true" [saveFreq]="saveFreq"
+        [state]="contentState">
     </core-h5p-iframe>
 </core-loading>
 

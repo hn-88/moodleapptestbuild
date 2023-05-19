@@ -16,7 +16,6 @@ import { Injectable } from '@angular/core';
 import { WKUserScriptWindow } from 'cordova-plugin-wkuserscript';
 import { WKWebViewCookiesWindow } from 'cordova-plugin-wkwebview-cookies';
 
-import { CoreApp } from '@services/app';
 import { CoreNetwork } from '@services/network';
 import { CoreFile } from '@services/file';
 import { CoreFileHelper } from '@services/file-helper';
@@ -32,6 +31,7 @@ import { CoreWindow } from '@singletons/window';
 import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 import { CorePath } from '@singletons/path';
 import { CorePromisedValue } from '@classes/promised-value';
+import { CorePlatform } from '@services/platform';
 
 /**
  * Possible types of frame elements.
@@ -76,7 +76,7 @@ export class CoreIframeUtilsProvider {
             this.addOfflineWarning(element, src, isSubframe);
 
             // If the network changes, check it again.
-            const subscription = CoreNetwork.onConnect().subscribe(() => {
+            const subscription = CoreNetwork.onConnectShouldBeStable().subscribe(() => {
                 // Execute the callback in the Angular zone, so change detection doesn't stop working.
                 NgZone.run(() => {
                     if (!this.checkOnlineFrameInOffline(element, isSubframe)) {
@@ -87,7 +87,7 @@ export class CoreIframeUtilsProvider {
             });
 
             return true;
-        } else if (element.classList.contains('core-iframe-offline-disabled')) {
+        } else if (element.classList.contains('core-iframe-offline-disabled') && element.parentElement) {
             // Reload the frame.
             if ('src' in element) {
                 // eslint-disable-next-line no-self-assign
@@ -98,7 +98,7 @@ export class CoreIframeUtilsProvider {
             }
 
             // Remove the warning and show the iframe
-            CoreDomUtils.removeElement(element.parentElement!, 'div.core-iframe-offline-warning');
+            CoreDomUtils.removeElement(element.parentElement, 'div.core-iframe-offline-warning');
             element.classList.remove('core-iframe-offline-disabled');
 
             if (isSubframe) {
@@ -207,14 +207,13 @@ export class CoreIframeUtilsProvider {
         const finalUrl = await currentSite.getAutoLoginUrl(url, false);
 
         // Resolve the promise once the iframe is loaded, or after a certain time.
-        let unblocked = false;
         const unblock = () => {
-            if (unblocked) {
+            if (!this.waitAutoLoginDefer) {
+                // Not blocked.
                 return;
             }
 
-            unblocked = true;
-            this.waitAutoLoginDefer!.resolve();
+            this.waitAutoLoginDefer.resolve();
             delete this.waitAutoLoginDefer;
         };
 
@@ -232,6 +231,12 @@ export class CoreIframeUtilsProvider {
      * @returns Window and Document.
      */
     getContentWindowAndDocument(element: CoreFrameElement): { window: Window | null; document: Document | null } {
+        const src = 'src' in element ? element.src : element.data;
+        if (!CoreUrlUtils.isLocalFileUrl(src)) {
+            // No permissions to access the iframe.
+            return { window: null, document: null };
+        }
+
         let contentWindow: Window | null = 'contentWindow' in element ? element.contentWindow : null;
         let contentDocument: Document | null = null;
 
@@ -531,7 +536,7 @@ export class CoreIframeUtilsProvider {
             } catch (error) {
                 CoreDomUtils.showErrorModal(error);
             }
-        } else if (CoreApp.isIOS() && (!link.target || link.target == '_self') && element) {
+        } else if (CorePlatform.isIOS() && (!link.target || link.target == '_self') && element) {
             // In cordova ios 4.1.0 links inside iframes stopped working. We'll manually treat them.
             event && event.preventDefault();
             if (element.tagName.toLowerCase() == 'object') {
@@ -564,7 +569,7 @@ export class CoreIframeUtilsProvider {
      * @returns Promise resolved when done.
      */
     async fixIframeCookies(url: string): Promise<void> {
-        if (!CoreApp.isIOS() || !url || CoreUrlUtils.isLocalFileUrl(url)) {
+        if (!CorePlatform.isIOS() || !url || CoreUrlUtils.isLocalFileUrl(url)) {
             // No need to fix cookies.
             return;
         }
@@ -593,7 +598,7 @@ export class CoreIframeUtilsProvider {
      * @returns Boolean.
      */
     shouldDisplayHelp(): boolean {
-        return CoreApp.isIOS() && CoreApp.getPlatformMajorVersion() >= 14;
+        return CorePlatform.isIOS() && CorePlatform.getPlatformMajorVersion() >= 14;
     }
 
     /**

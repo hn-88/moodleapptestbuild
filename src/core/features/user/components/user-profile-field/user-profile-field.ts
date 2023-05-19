@@ -14,7 +14,7 @@
 
 import { Component, Input, OnInit, Type } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-
+import { CoreLang } from '@services/lang';
 import { AuthEmailSignupProfileField } from '@features/login/services/login-helper';
 import { CoreUserProfileField } from '@features/user/services/user';
 import { CoreUserProfileFieldDelegate } from '@features/user/services/user-profile-field-delegate';
@@ -51,16 +51,21 @@ export class CoreUserProfileFieldComponent implements OnInit {
 
         this.componentClass = await CoreUserProfileFieldDelegate.getComponent(this.field, this.signup);
 
+        if ('param1' in this.field && this.field.param1) {
+            this.field.param1 = await CoreLang.filterMultilang(this.field.param1);
+        }
+
         this.data.field = this.field;
         this.data.edit = CoreUtils.isTrueOrOne(this.edit);
+        this.data.contextLevel = this.contextLevel;
+        this.data.contextInstanceId = this.contextInstanceId;
+        this.data.courseId = this.courseId;
+
         if (this.edit) {
             this.data.signup = CoreUtils.isTrueOrOne(this.signup);
             this.data.disabled = 'locked' in this.field && CoreUtils.isTrueOrOne(this.field.locked);
             this.data.form = this.form;
             this.data.registerAuth = this.registerAuth;
-            this.data.contextLevel = this.contextLevel;
-            this.data.contextInstanceId = this.contextInstanceId;
-            this.data.courseId = this.courseId;
         }
     }
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { SafeNumber } from '@/core/utils/types';
 import { Injectable } from '@angular/core';
 
 import { CoreError } from '@classes/errors/error';
@@ -99,7 +100,7 @@ export class AddonModQuizProvider {
      * @returns Grade to display.
      */
     formatGrade(grade?: number | null, decimals?: number): string {
-        if (grade === undefined || grade == -1 || grade === null || isNaN(grade)) {
+        if (grade === undefined || grade === -1 || grade === null || isNaN(grade)) {
             return Translate.instant('addon.mod_quiz.notyetgraded');
         }
 
@@ -290,7 +291,7 @@ export class AddonModQuizProvider {
                 return dueDate * 1000;
 
             case AddonModQuizProvider.ATTEMPT_OVERDUE:
-                return (dueDate + quiz.graceperiod!) * 1000;
+                return (dueDate + (quiz.graceperiod ?? 0)) * 1000;
 
             default:
                 this.logger.warn('Unexpected state when getting due date: ' + attempt.state);
@@ -356,7 +357,7 @@ export class AddonModQuizProvider {
                     Translate.instant('addon.mod_quiz.statefinished'),
                     Translate.instant(
                         'addon.mod_quiz.statefinisheddetails',
-                        { $a: CoreTimeUtils.userDate(attempt.timefinish! * 1000) },
+                        { $a: CoreTimeUtils.userDate((attempt.timefinish ?? 0) * 1000) },
                     ),
                 ];
 
@@ -592,7 +593,7 @@ export class AddonModQuizProvider {
      */
     async getFeedbackForGrade(
         quizId: number,
-        grade: number,
+        grade: SafeNumber,
         options: CoreCourseCommonModWSOptions = {},
     ): Promise<AddonModQuizGetQuizFeedbackForGradeWSResponse> {
         const site = await CoreSites.getSite(options.siteId);
@@ -625,7 +626,7 @@ export class AddonModQuizProvider {
         }
 
         if (quiz.questiondecimalpoints == -1) {
-            return quiz.decimalpoints!;
+            return quiz.decimalpoints ?? 1;
         }
 
         return quiz.questiondecimalpoints;
@@ -1780,7 +1781,7 @@ export class AddonModQuizProvider {
      * @returns Whether quiz is graded.
      */
     quizHasGrades(quiz: AddonModQuizQuizWSData): boolean {
-        return quiz.grade! >= 0.000005 && quiz.sumgrades! >= 0.000005;
+        return (quiz.grade ?? 0) >= 0.000005 && (quiz.sumgrades ?? 0) >= 0.000005;
     }
 
     /**
@@ -1800,10 +1801,10 @@ export class AddonModQuizProvider {
     ): string | undefined {
         let grade: number | undefined;
 
-        const rawGradeNum = typeof rawGrade == 'string' ? parseFloat(rawGrade) : rawGrade;
+        const rawGradeNum = typeof rawGrade === 'string' ? parseFloat(rawGrade) : rawGrade;
         if (rawGradeNum !== undefined && rawGradeNum !== null && !isNaN(rawGradeNum)) {
-            if (quiz.sumgrades! >= 0.000005) {
-                grade = rawGradeNum * quiz.grade! / quiz.sumgrades!;
+            if (quiz.sumgrades && quiz.sumgrades >= 0.000005) {
+                grade = rawGradeNum * (quiz.grade ?? 0) / quiz.sumgrades;
             } else {
                 grade = 0;
             }
@@ -1816,7 +1817,7 @@ export class AddonModQuizProvider {
         if (format === 'question') {
             return this.formatGrade(grade, this.getGradeDecimals(quiz));
         } else if (format) {
-            return this.formatGrade(grade, quiz.decimalpoints!);
+            return this.formatGrade(grade, quiz.decimalpoints ?? 1);
         }
 
         return String(grade);
@@ -2053,7 +2054,7 @@ export type AddonModQuizAttemptWSData = {
     timemodified?: number; // Last modified time.
     timemodifiedoffline?: number; // Last modified time via webservices.
     timecheckstate?: number; // Next time quiz cron should check attempt for state changes. NULL means never check.
-    sumgrades?: number | null; // Total marks for this attempt.
+    sumgrades?: SafeNumber | null; // Total marks for this attempt.
 };
 
 /**
@@ -2304,7 +2305,7 @@ export type AddonModQuizGetUserBestGradeWSParams = {
  */
 export type AddonModQuizGetUserBestGradeWSResponse = {
     hasgrade: boolean; // Whether the user has a grade on the given quiz.
-    grade?: number; // The grade (only if the user has a grade).
+    grade?: SafeNumber; // The grade (only if the user has a grade).
     gradetopass?: number; // @since 3.11. The grade to pass the quiz (only if set).
     warnings?: CoreWSExternalWarning[];
 };

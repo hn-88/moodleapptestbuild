@@ -2,7 +2,6 @@
     <core-mod-icon slot="start" [modicon]="modicon" [modname]="module.modname" [componentId]="module.instance">
     </core-mod-icon>
     <ion-label>
-        <div class="core-modulename" *ngIf="moduleNameTranslated">{{moduleNameTranslated}}</div>
         <h1>
             <core-format-text [text]="module.name" contextLevel="module" [component]="component" [componentId]="componentId"
                 [contextInstanceId]="module.id" [courseId]="courseId">
@@ -51,7 +50,7 @@
 <!-- Activity has something offline. -->
 <ion-card class="core-warning-card" *ngIf="hasDataToSync">
     <ion-item>
-        <ion-icon name="fas-exclamation-triangle" slot="start" aria-hidden="true"></ion-icon>
+        <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
         <ion-label>{{ 'core.hasdatatosync' | translate: {$a: moduleNameTranslated} }}</ion-label>
     </ion-item>
 </ion-card>

@@ -1,7 +1,7 @@
 <!-- Buttons to add to the header. -->
 <core-navbar-buttons slot="end">
     <ion-button fill="clear" (click)="openModuleSummary()" aria-haspopup="true" [attr.aria-label]="'core.info' | translate">
-        <ion-icon name="fas-info-circle" slot="icon-only" aria-hidden="true"></ion-icon>
+        <ion-icon name="fas-circle-info" slot="icon-only" aria-hidden="true"></ion-icon>
     </ion-button>
 </core-navbar-buttons>
 
@@ -24,8 +24,8 @@
             (click)="openBook(chapter.id)">
             <ion-label>
                 <p [class.ion-padding-start]="addPadding && chapter.level == 1 ? true : null">
-                    <span *ngIf="showNumbers" class="addon-mod-book-number">{{chapter.indexNumber}}&nbsp;</span>
-                    <span *ngIf="showBullets" class="addon-mod-book-bullet">&bull;&nbsp;</span>
+                    <span *ngIf="showNumbers" class="addon-mod-book-number">{{chapter.indexNumber}} </span>
+                    <span *ngIf="showBullets" class="addon-mod-book-bullet">&bull; </span>
                     <core-format-text [text]="chapter.title" contextLevel="module" [contextInstanceId]="module.id" [courseId]="courseId">
                     </core-format-text>
                 </p>

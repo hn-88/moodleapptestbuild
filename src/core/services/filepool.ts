@@ -55,7 +55,6 @@ import { lazyMap, LazyMap } from '../utils/lazy-map';
 import { asyncInstance, AsyncInstance } from '../utils/async-instance';
 import { CorePath } from '@singletons/path';
 import { CorePromisedValue } from '@classes/promised-value';
-import { CoreSite } from '@classes/site';
 
 /*
  * Factory for handling downloading files and retrieve downloaded files.
@@ -151,7 +150,7 @@ export class CoreFilepoolProvider {
             this.checkQueueProcessing();
 
             // Start queue when device goes online.
-            CoreNetwork.onConnect().subscribe(() => {
+            CoreNetwork.onConnectShouldBeStable().subscribe(() => {
                 // Execute the callback in the Angular zone, so change detection doesn't stop working.
                 NgZone.run(() => this.checkQueueProcessing());
             });
@@ -510,7 +509,7 @@ export class CoreFilepoolProvider {
         } else {
             if (!CoreNetwork.isOnline()) {
                 // Cannot check size in offline, stop.
-                throw new CoreError(Translate.instant('core.cannotconnect', { $a: CoreSite.MINIMUM_MOODLE_VERSION }));
+                throw new CoreError(Translate.instant('core.cannotconnect'));
             }
 
             size = await CoreWS.getRemoteFileSize(fileUrl);

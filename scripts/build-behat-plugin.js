@@ -33,7 +33,7 @@ async function main() {
         : [];
 
     if (!existsSync(pluginPath)) {
-        mkdirSync(pluginPath);
+        mkdirSync(pluginPath, { recursive: true });
     } else {
         // Empty directory, except the excluding list.
         const excludeFromErase = [
@@ -76,37 +76,55 @@ async function main() {
     };
     writeFileSync(pluginFilePath, replaceArguments(fileContents, replacements));
 
-    // Copy feature files.
+    // Copy features, snapshots, and fixtures.
     if (!excludeFeatures) {
         const behatTempFeaturesPath = `${pluginPath}/behat-tmp`;
-        copySync(projectPath('src'), behatTempFeaturesPath, { filter: isFeatureFileOrDirectory });
+        copySync(projectPath('src'), behatTempFeaturesPath, { filter: shouldCopyFileOrDirectory });
 
         const behatFeaturesPath = `${pluginPath}/tests/behat`;
         if (!existsSync(behatFeaturesPath)) {
-            mkdirSync(behatFeaturesPath, {recursive: true});
+            mkdirSync(behatFeaturesPath, { recursive: true });
         }
 
-        for await (const featureFile of getDirectoryFiles(behatTempFeaturesPath)) {
-            const featurePath = dirname(featureFile);
-            if (!featurePath.endsWith('/tests/behat')) {
+        for await (const file of getDirectoryFiles(behatTempFeaturesPath)) {
+            const filePath = dirname(file);
+            const snapshotsIndex = file.indexOf('/tests/behat/snapshots/');
+            const fixturesIndex = file.indexOf('/tests/behat/fixtures/');
+
+            if (snapshotsIndex !== -1) {
+                moveFile(file, behatFeaturesPath + '/snapshots/' + file.slice(snapshotsIndex + 23));
+
                 continue;
             }
 
-            const newPath = featurePath.substring(0, featurePath.length - ('/tests/behat'.length));
+            if (fixturesIndex !== -1) {
+                moveFile(file, behatFeaturesPath + '/fixtures/' + file.slice(fixturesIndex + 22));
+
+                continue;
+            }
+
+            if (!filePath.endsWith('/tests/behat')) {
+                continue;
+            }
+
+            const newPath = filePath.substring(0, filePath.length - ('/tests/behat'.length));
             const searchRegExp = /\//g;
             const prefix = relative(behatTempFeaturesPath, newPath).replace(searchRegExp,'-') || 'core';
-            const featureFilename = prefix + '-' + basename(featureFile);
-            renameSync(featureFile, behatFeaturesPath + '/' + featureFilename);
+            const featureFilename = prefix + '-' + basename(file);
+            moveFile(file, behatFeaturesPath + '/' + featureFilename);
         }
 
         rmSync(behatTempFeaturesPath, {recursive: true});
     }
 }
 
-function isFeatureFileOrDirectory(src) {
-    const stats = statSync(src);
+function shouldCopyFileOrDirectory(path) {
+    const stats = statSync(path);
 
-    return stats.isDirectory() || extname(src) === '.feature';
+    return stats.isDirectory()
+        || extname(path) === '.feature'
+        || path.includes('/tests/behat/snapshots')
+        || path.includes('/tests/behat/fixtures');
 }
 
 function isExcluded(file, exclusions) {
@@ -116,6 +134,16 @@ function isExcluded(file, exclusions) {
 function fail(message) {
     console.error(message);
     process.exit(1);
+}
+
+function moveFile(from, to) {
+    const targetDir = dirname(to);
+
+    if (!existsSync(targetDir)) {
+        mkdirSync(targetDir, { recursive: true });
+    }
+
+    renameSync(from, to);
 }
 
 function guessPluginPath() {

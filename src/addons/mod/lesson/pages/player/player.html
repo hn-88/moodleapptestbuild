@@ -22,7 +22,7 @@
         <!-- Info messages. Only show the first one. -->
         <ion-card class="core-info-card" *ngIf="lesson && messages?.length">
             <ion-item class="ion-text-wrap">
-                <ion-icon name="fas-info-circle" slot="start" aria-hidden="true"></ion-icon>
+                <ion-icon name="fas-circle-info" slot="start" aria-hidden="true"></ion-icon>
                 <ion-label>{{ messages[0].message }}</ion-label>
             </ion-item>
         </ion-card>
@@ -94,7 +94,7 @@
                             </ion-item>
                             <ion-item class="ion-text-wrap" *ngIf="!question.textarea && question.useranswer">
                                 <ion-label>
-                                    <h3 class="item-heading">{{ 'addon.mod_lesson.youranswer' | translate }}</h3>
+                                    <p class="item-heading">{{ 'addon.mod_lesson.youranswer' | translate }}</p>
                                     <p>
                                         <core-format-text [component]="component" [componentId]="lesson?.coursemodule"
                                             [text]="question.useranswer" contextLevel="module" [contextInstanceId]="lesson?.coursemodule"
@@ -138,14 +138,12 @@
                             <ion-item class="ion-text-wrap" *ngFor="let row of question.rows">
                                 <ion-label>
                                     <p>
-                                        <core-format-text id="addon-mod_lesson-matching-{{row.id}}" [component]="component"
-                                            [componentId]="lesson?.coursemodule" [text]="row.text" contextLevel="module"
-                                            [contextInstanceId]="lesson?.coursemodule" [courseId]="courseId">
+                                        <core-format-text [component]="component" [componentId]="lesson?.coursemodule" [text]="row.text"
+                                            contextLevel="module" [contextInstanceId]="lesson?.coursemodule" [courseId]="courseId">
                                         </core-format-text>
                                     </p>
                                 </ion-label>
-                                <ion-select [id]="row.id" [formControlName]="row.name" interface="action-sheet"
-                                    [attr.aria-labelledby]="'addon-mod_lesson-matching-' + row.id">
+                                <ion-select [id]="row.id" [formControlName]="row.name" interface="action-sheet">
                                     <ion-select-option *ngFor="let option of row.options" [value]="option.value">
                                         {{option.label}}
                                     </ion-select-option>
@@ -185,7 +183,7 @@
                 </ion-item>
                 <ion-card class="core-info-card" *ngIf="lesson?.progressbar && canManage">
                     <ion-item class="ion-text-wrap">
-                        <ion-icon name="fas-info-circle" slot="start" aria-hidden="true"></ion-icon>
+                        <ion-icon name="fas-circle-info" slot="start" aria-hidden="true"></ion-icon>
                         <ion-label>{{ 'addon.mod_lesson.progressbarteacherwarning2' | translate }}</ion-label>
                     </ion-item>
                 </ion-card>
@@ -194,7 +192,7 @@
             <!-- End of lesson reached. -->
             <ion-card class="core-warning-card" *ngIf="eolData && !processData && eolData.offline?.value">
                 <ion-item>
-                    <ion-icon name="fas-exclamation-triangle" slot="start" aria-hidden="true"></ion-icon>
+                    <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
                     <ion-label>{{ 'addon.mod_lesson.finishretakeoffline' | translate }}</ion-label>
                 </ion-item>
             </ion-card>

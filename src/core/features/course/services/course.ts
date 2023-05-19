@@ -33,6 +33,7 @@ import { CoreCourseOffline } from './course-offline';
 import { CoreError } from '@classes/errors/error';
 import {
     CoreCourseAnyCourseData,
+    CoreCourses,
     CoreCoursesProvider,
 } from '../../courses/services/courses';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -248,6 +249,28 @@ export class CoreCourseProvider {
     isIncompleteAutomaticCompletion(completion: CoreCourseModuleCompletionData): boolean {
         return completion.tracking === CoreCourseModuleCompletionTracking.COMPLETION_TRACKING_AUTOMATIC &&
             completion.state === CoreCourseModuleCompletionStatus.COMPLETION_INCOMPLETE;
+    }
+
+    /**
+     * Check whether a course has indentation enabled.
+     *
+     * @param site Site.
+     * @param courseId Course id.
+     * @returns Whether indentation is enabled.
+     */
+    async isCourseIndentationEnabled(site: CoreSite, courseId: number): Promise<boolean> {
+        if (!site.isVersionGreaterEqualThan('4.0')) {
+            return false;
+        }
+
+        const course = await CoreCourses.getCourseByField('id', courseId, site.id);
+        const formatOptions = CoreUtils.objectToKeyValueMap<{ indentation?: string }>(
+            course.courseformatoptions ?? [],
+            'name',
+            'value',
+        );
+
+        return formatOptions.indentation === '1';
     }
 
     /**
@@ -1274,9 +1297,9 @@ export class CoreCourseProvider {
         if (!result.status) {
             if (result.warnings && result.warnings.length) {
                 throw new CoreWSError(result.warnings[0]);
-            } else {
-                throw new CoreError('Cannot change completion.');
             }
+
+            throw new CoreError('Cannot change completion.');
         }
 
         return result;
@@ -1509,17 +1532,17 @@ export class CoreCourseProvider {
      * Translate a module name to current language.
      *
      * @param moduleName The module name.
+     * @param fallback Fallback text to use if not translated. Will use moduleName otherwise.
+     *
      * @returns Translated name.
      */
-    translateModuleName(moduleName: string): string {
-        if (this.CORE_MODULES.indexOf(moduleName) < 0) {
-            moduleName = 'external-tool';
-        }
-
+    translateModuleName(moduleName: string, fallback?: string): string {
         const langKey = 'core.mod_' + moduleName;
         const translated = Translate.instant(langKey);
 
-        return translated !== langKey ? translated : moduleName;
+        return translated !== langKey ?
+            translated :
+            (fallback || moduleName);
     }
 
     /**

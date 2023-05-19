@@ -45,7 +45,7 @@ import { CoreErrorInfoComponent } from '@components/error-info/error-info';
 import { CoreUserSupportConfig } from '@features/user/classes/support/support-config';
 import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest-support-config';
 import { CoreLoginError } from '@classes/errors/loginerror';
-import { CoreSite } from '@classes/site';
+import { CorePlatform } from '@services/platform';
 
 /**
  * Site (url) chooser when adding a new site.
@@ -59,7 +59,7 @@ export class CoreLoginSitePage implements OnInit {
 
     @ViewChild('siteFormEl') formElement?: ElementRef;
 
-    siteForm: FormGroup;
+    siteForm!: FormGroup;
     fixedSites?: CoreLoginSiteInfoExtended[];
     filteredSites?: CoreLoginSiteInfoExtended[];
     siteSelector: CoreLoginSiteSelectorListMethod = 'sitefinder';
@@ -68,15 +68,17 @@ export class CoreLoginSitePage implements OnInit {
     sites: CoreLoginSiteInfoExtended[] = [];
     hasSites = false;
     loadingSites = false;
-    searchFunction: (search: string) => void;
-    showScanQR: boolean;
+    searchFunction!: (search: string) => void;
+    showScanQR!: boolean;
     enteredSiteUrl?: CoreLoginSiteInfoExtended;
-    siteFinderSettings: CoreLoginSiteFinderSettings;
+    siteFinderSettings!: CoreLoginSiteFinderSettings;
 
-    constructor(
-        protected formBuilder: FormBuilder,
-    ) {
+    constructor(protected formBuilder: FormBuilder) {}
 
+    /**
+     * Initialize the component.
+     */
+    async ngOnInit(): Promise<void> {
         let url = '';
         this.siteSelector = CoreConstants.CONFIG.multisitesdisplay;
 
@@ -92,9 +94,11 @@ export class CoreLoginSitePage implements OnInit {
         };
 
         // Load fixed sites if they're set.
-        if (CoreLoginHelper.hasSeveralFixedSites()) {
-            url = this.initSiteSelector();
-        } else if (CoreConstants.CONFIG.enableonboarding && !CoreApp.isIOS()) {
+        const sites = await CoreLoginHelper.getAvailableSites();
+
+        if (sites.length) {
+            url = await this.initSiteSelector();
+        } else if (CoreConstants.CONFIG.enableonboarding && !CorePlatform.isIOS()) {
             this.initOnboarding();
         }
 
@@ -122,12 +126,7 @@ export class CoreLoginSitePage implements OnInit {
 
             this.loadingSites = false;
         }, 1000);
-    }
 
-    /**
-     * Initialize the component.
-     */
-    ngOnInit(): void {
         this.showKeyboard = !!CoreNavigator.getRouteBooleanParam('showKeyboard');
     }
 
@@ -136,8 +135,9 @@ export class CoreLoginSitePage implements OnInit {
      *
      * @returns URL of the first site.
      */
-    protected initSiteSelector(): string {
-        this.fixedSites = this.extendCoreLoginSiteInfo(<CoreLoginSiteInfoExtended[]> CoreLoginHelper.getFixedSites());
+    protected async initSiteSelector(): Promise<string> {
+        const availableSites = await CoreLoginHelper.getAvailableSites();
+        this.fixedSites = this.extendCoreLoginSiteInfo(<CoreLoginSiteInfoExtended[]> availableSites);
         this.siteSelector = 'list'; // In case it's not defined
 
         // Do not show images if none are set.
@@ -420,7 +420,7 @@ export class CoreLoginSitePage implements OnInit {
                     text: Translate.instant('core.contactsupport'),
                     handler: () => CoreUserSupport.contact({
                         supportConfig: alertSupportConfig,
-                        subject: Translate.instant('core.cannotconnect', { $a: CoreSite.MINIMUM_MOODLE_VERSION }),
+                        subject: Translate.instant('core.cannotconnect'),
                         message: `Error: ${errorCode}\n\n${errorDetails}`,
                     }),
                 }
@@ -435,13 +435,8 @@ export class CoreLoginSitePage implements OnInit {
                 ),
         ].filter(button => !!button);
 
-        // @todo Remove CoreSite.MINIMUM_MOODLE_VERSION, not used on translations since 3.9.0.
         const alertElement = await CoreDomUtils.showAlertWithOptions({
-            header: errorTitle ?? (
-                siteExists
-                    ? Translate.instant('core.cannotconnect', { $a: CoreSite.MINIMUM_MOODLE_VERSION })
-                    : Translate.instant('core.sitenotfound')
-            ),
+            header: errorTitle ?? Translate.instant('core.cannotconnect'),
             message: errorMessage ?? Translate.instant('core.sitenotfoundhelp'),
             buttons: buttons as AlertButton[],
         });

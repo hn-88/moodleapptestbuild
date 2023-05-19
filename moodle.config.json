@@ -1,8 +1,8 @@
 {
     "app_id": "com.moodle.moodlemobile",
     "appname": "Moodle Mobile",
-    "versioncode": 41001,
-    "versionname": "4.1.0",
+    "versioncode": 42000,
+    "versionname": "4.2.0",
     "cache_update_frequency_usually": 420000,
     "cache_update_frequency_often": 1200000,
     "cache_update_frequency_sometimes": 3600000,
@@ -57,6 +57,7 @@
         "sr-cr": "Српски",
         "sr-lt": "Srpski",
         "sv": "Svenska",
+        "szl": "Ślōnski",
         "tg": "Тоҷикӣ",
         "tr": "Türkçe",
         "uk": "Українська",
@@ -85,8 +86,7 @@
         "high": 120
     },
     "customurlscheme": "moodlemobile",
-    "siteurl": "",
-    "sitename": "",
+    "sites": [],
     "multisitesdisplay": "",
     "sitefindersettings": {},
     "onlyallowlistedsites": false,

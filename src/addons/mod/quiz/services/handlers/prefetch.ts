@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { CoreConstants } from '@/core/constants';
+import { isSafeNumber } from '@/core/utils/types';
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
@@ -120,11 +121,12 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
             }
 
             const attemptGrade = AddonModQuiz.rescaleGrade(attempt.sumgrades, quiz, false);
-            if (attemptGrade === undefined) {
+            const attemptGradeNumber = attemptGrade !== undefined && Number(attemptGrade);
+            if (!isSafeNumber(attemptGradeNumber)) {
                 return;
             }
 
-            const feedback = await AddonModQuiz.getFeedbackForGrade(quiz.id, Number(attemptGrade), {
+            const feedback = await AddonModQuiz.getFeedbackForGrade(quiz.id, attemptGradeNumber, {
                 cmId: quiz.coursemodule,
                 readingStrategy: CoreSitesReadingStrategy.ONLY_NETWORK,
                 siteId,
@@ -241,7 +243,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
 
         const isLastFinished = !attempts.length || AddonModQuiz.isAttemptFinished(attempts[attempts.length - 1].state);
 
-        return quiz.attempts === 0 || quiz.attempts! > attempts.length || !isLastFinished;
+        return quiz.attempts === 0 || (quiz.attempts ?? 0) > attempts.length || !isLastFinished;
     }
 
     /**
@@ -421,8 +423,9 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
         if (AddonModQuiz.isAttemptFinished(attempt.state)) {
             // Attempt is finished, get feedback and review data.
             const attemptGrade = AddonModQuiz.rescaleGrade(attempt.sumgrades, quiz, false);
-            if (attemptGrade !== undefined) {
-                promises.push(AddonModQuiz.getFeedbackForGrade(quiz.id, Number(attemptGrade), modOptions));
+            const attemptGradeNumber = attemptGrade !== undefined && Number(attemptGrade);
+            if (isSafeNumber(attemptGradeNumber)) {
+                promises.push(AddonModQuiz.getFeedbackForGrade(quiz.id, attemptGradeNumber, modOptions));
             }
 
             // Get the review for each page.
@@ -444,7 +447,7 @@ export class AddonModQuizPrefetchHandlerService extends CoreCourseActivityPrefet
             if (attempt.state == AddonModQuizProvider.ATTEMPT_IN_PROGRESS) {
                 // Get data for each page.
                 promises = promises.concat(pages.map(async (page) => {
-                    if (isSequential && page < attempt.currentpage!) {
+                    if (isSequential && attempt.currentpage && page < attempt.currentpage) {
                         // Sequential quiz, cannot get pages before the current one.
                         return;
                     }

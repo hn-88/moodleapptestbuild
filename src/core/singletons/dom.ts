@@ -88,21 +88,23 @@ export class CoreDom {
      *
      * @param element Element to check.
      * @param intersectionRatio Intersection ratio (From 0 to 1).
+     * @param container Container where element is located
      * @returns True if in viewport.
      */
-    static isElementInViewport(element: HTMLElement, intersectionRatio = 1): boolean {
+    static isElementInViewport(element: HTMLElement, intersectionRatio = 1, container: HTMLElement | null = null): boolean {
         const elementRectangle = element.getBoundingClientRect();
-
+        const containerRectangle = container?.getBoundingClientRect();
         const elementArea = elementRectangle.width * elementRectangle.height;
+
         if (elementArea == 0) {
             return false;
         }
 
         const intersectionRectangle = {
-            top: Math.max(0, elementRectangle.top),
-            left: Math.max(0, elementRectangle.left),
-            bottom: Math.min(window.innerHeight, elementRectangle.bottom),
-            right: Math.min(window.innerWidth, elementRectangle.right),
+            top: Math.max(containerRectangle?.top ?? 0, elementRectangle.top),
+            left: Math.max(containerRectangle?.left ?? 0, elementRectangle.left),
+            bottom: Math.min(containerRectangle?.bottom ?? window.innerHeight, elementRectangle.bottom),
+            right: Math.min(containerRectangle?.right ?? window.innerWidth, elementRectangle.right),
         };
 
         const intersectionArea = (intersectionRectangle.right - intersectionRectangle.left) *
@@ -514,22 +516,67 @@ export class CoreDom {
      *
      * @param element Element to listen to events.
      * @param callback Callback to call when clicked or the key is pressed.
+     * @deprecated since 4.1.1: Use initializeClickableElementA11y instead.
      */
-    static onActivate(element: HTMLElement, callback: (event: MouseEvent | KeyboardEvent) => void): void {
-        element.addEventListener('click', (event) => callback(event));
+    static onActivate(
+        element: HTMLElement & {disabled?: boolean},
+        callback: (event: MouseEvent | KeyboardEvent) => void,
+    ): void {
+        this.initializeClickableElementA11y(element, callback);
+    }
+
+    /**
+     * Initializes a clickable element a11y calling the click action when pressed enter or space
+     * and adding tabindex and role if needed.
+     *
+     * @param element Element to listen to events.
+     * @param callback Callback to call when clicked or the key is pressed.
+     */
+    static initializeClickableElementA11y(
+        element: HTMLElement & {disabled?: boolean},
+        callback: (event: MouseEvent | KeyboardEvent) => void,
+    ): void {
+        const enabled = () => !CoreUtils.isTrueOrOne(element.dataset.disabledA11yClicks ?? 'false');
+
+        element.addEventListener('click', (event) => enabled() && callback(event));
 
         element.addEventListener('keydown', (event) => {
-            if ((event.key == ' ' || event.key == 'Enter')) {
+            if (!enabled()) {
+                return;
+            }
+
+            if (event.key === ' ' || event.key === 'Enter') {
                 event.preventDefault();
                 event.stopPropagation();
             }
         });
 
         element.addEventListener('keyup', (event) => {
-            if ((event.key == ' ' || event.key == 'Enter')) {
+            if (!enabled()) {
+                return;
+            }
+
+            if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                event.stopPropagation();
+
                 callback(event);
             }
         });
+
+        if (element.tagName !== 'BUTTON' && element.tagName !== 'A') {
+            // Set tabindex if not previously set.
+            if (element.getAttribute('tabindex') === null) {
+                element.setAttribute('tabindex', element.disabled ? '-1' : '0');
+            }
+
+            // Set role if not previously set.
+            if (!element.getAttribute('role')) {
+                element.setAttribute('role', 'button');
+            }
+
+            element.classList.add('clickable');
+        }
     }
 
 }
@@ -549,4 +596,12 @@ export type CoreScrollOptions = {
     duration?: number;
     addYAxis?: number;
     addXAxis?: number;
+};
+
+/**
+ * Source of a media element.
+ */
+export type CoreMediaSource = {
+    src: string;
+    type?: string;
 };

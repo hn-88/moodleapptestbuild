@@ -31,4 +31,5 @@ jobs:
         npx cordova platform remove ios
         npx cordova prepare
         npx gulp
-        npx ionic cordova build android --prod
+        #npx ionic cordova build android --prod
+        cordova build android

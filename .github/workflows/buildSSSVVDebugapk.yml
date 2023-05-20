@@ -6,7 +6,7 @@ on: workflow_dispatch
 jobs:
 
   debugbuild:
-    name: check for old version of yml
+    name: debug build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -22,8 +22,8 @@ jobs:
         npm run build:prod
         echo "Completed npm run build:prod."
         echo "Installing cordova etc..."
-        npm install cordova
-        npm i -g cordova-res
+        sudo npm install -g cordova
+        sudo npm install -g cordova-res
         npm install 
         npx ionic cordova platform add android@11.0.0
         cordova-res android --skip-config --copy

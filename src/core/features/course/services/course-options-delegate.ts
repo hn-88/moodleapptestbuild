@@ -448,11 +448,7 @@ export class CoreCourseOptionsDelegateService extends CoreDelegate<CoreCourseOpt
                 ? (handler as CoreCourseOptionsMenuHandler).getMenuDisplayData
                 : (handler as CoreCourseOptionsHandler).getDisplayData;
 
-            if (!getFunction) {
-                return;
-            }
-
-            promises.push(Promise.resolve(getFunction.call(handler, courseWithOptions)).then((data) => {
+            promises.push(Promise.resolve(getFunction!.call(handler, courseWithOptions)).then((data) => {
                 handlersToDisplay.push({
                     data: data,
                     priority: handler.priority || 0,
@@ -472,7 +468,7 @@ export class CoreCourseOptionsDelegateService extends CoreDelegate<CoreCourseOpt
         handlersToDisplay.sort((
             a: CoreCourseOptionsHandlerToDisplay | CoreCourseOptionsMenuHandlerToDisplay,
             b: CoreCourseOptionsHandlerToDisplay | CoreCourseOptionsMenuHandlerToDisplay,
-        ) => (b.priority || 0) - (a.priority || 0));
+        ) => b.priority! - a.priority!);
 
         return handlersToDisplay;
     }

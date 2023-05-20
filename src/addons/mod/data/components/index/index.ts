@@ -95,7 +95,6 @@ export class AddonModDataIndexComponent extends CoreCourseModuleMainActivityComp
         database: AddonModDataData;
         title: string;
         group: number;
-        access: AddonModDataGetDataAccessInformationWSResponse | undefined;
         gotoEntry: (entryId: number) => void;
     };
 
@@ -349,7 +348,7 @@ export class AddonModDataIndexComponent extends CoreCourseModuleMainActivityComp
             this.entries.forEach((entry, index) => {
                 entriesById[entry.id] = entry;
 
-                const actions = AddonModDataHelper.getActions(this.database!, this.access!, entry, AddonModDataTemplateMode.LIST);
+                const actions = AddonModDataHelper.getActions(this.database!, this.access!, entry);
                 const options: AddonModDatDisplayFieldsOptions = {};
                 if (!this.search.searching) {
                     options.offset = this.search.page * AddonModDataProvider.PER_PAGE + index - numOfflineEntries;
@@ -376,7 +375,6 @@ export class AddonModDataIndexComponent extends CoreCourseModuleMainActivityComp
                 database: this.database!,
                 title: this.module.name,
                 group: this.selectedGroup,
-                access: this.access,
                 gotoEntry: (entryId) => this.gotoEntry(entryId),
             };
         } else if (!this.search.searching) {
@@ -521,10 +519,22 @@ export class AddonModDataIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * @inheritdoc
+     * Performs the sync of the activity.
+     *
+     * @returns Promise resolved when done.
      */
     protected sync(): Promise<AddonModDataSyncResult> {
         return AddonModDataPrefetchHandler.sync(this.module, this.courseId);
+    }
+
+    /**
+     * Checks if sync has succeed from result sync data.
+     *
+     * @param result Data returned on the sync function.
+     * @returns If suceed or not.
+     */
+    protected hasSyncSucceed(result: AddonModDataSyncResult): boolean {
+        return result.updated;
     }
 
     /**

@@ -42,11 +42,6 @@ img {
         white-space: nowrap;
         overflow: hidden;
     }
-
-    &.no-filter {
-        --filter: none;
-    }
-
 }
 
 :host-context(ion-item) {

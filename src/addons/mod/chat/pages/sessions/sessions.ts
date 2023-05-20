@@ -34,16 +34,15 @@ export class AddonModChatSessionsPage implements AfterViewInit, OnDestroy {
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
 
     sessions!: CoreListItemsManager<AddonModChatSessionFormatted, AddonModChatSessionsSource>;
-    courseId?: number;
 
     constructor() {
         try {
-            this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
+            const courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             const chatId = CoreNavigator.getRequiredRouteNumberParam('chatId');
             const cmId = CoreNavigator.getRequiredRouteNumberParam('cmId');
             const source = CoreRoutedItemsManagerSourcesTracker.getOrCreateSource(
                 AddonModChatSessionsSource,
-                [this.courseId, chatId, cmId],
+                [courseId, chatId, cmId],
             );
 
             this.sessions = new CoreListItemsManager(source, AddonModChatSessionsPage);

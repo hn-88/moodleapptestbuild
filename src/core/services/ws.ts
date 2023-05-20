@@ -647,12 +647,11 @@ export class CoreWSProvider {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return promise.then(async (data: any) => {
-            // Some moodle web services always return null, and some others can return a primitive type or null.
-            if (data === null && (!preSets.responseExpected || preSets.typeExpected !== 'object')) {
-                return null;
+            // Some moodle web services return null.
+            // If the responseExpected value is set to false, we create a blank object if the response is null.
+            if (!data && !preSets.responseExpected) {
+                data = {};
             }
-
-            const typeExpected = preSets.typeExpected === 'jsonstring' ? 'string' : preSets.typeExpected;
 
             if (!data) {
                 throw await this.createCannotConnectSiteError(preSets.siteUrl, {
@@ -661,26 +660,26 @@ export class CoreWSProvider {
                         details: Translate.instant('core.errorinvalidresponse', { method }),
                     }),
                 });
-            } else if (typeof data !== typeExpected) {
+            } else if (typeof data != preSets.typeExpected) {
                 // If responseType is text an string will be returned, parse before returning.
                 if (typeof data == 'string') {
-                    if (typeExpected === 'number') {
+                    if (preSets.typeExpected == 'number') {
                         data = Number(data);
                         if (isNaN(data)) {
-                            this.logger.warn(`Response expected type "${typeExpected}" cannot be parsed to number`);
+                            this.logger.warn(`Response expected type "${preSets.typeExpected}" cannot be parsed to number`);
 
                             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                                 errorcode: 'invalidresponse',
                                 errorDetails: Translate.instant('core.errorinvalidresponse', { method }),
                             });
                         }
-                    } else if (typeExpected === 'boolean') {
+                    } else if (preSets.typeExpected == 'boolean') {
                         if (data === 'true') {
                             data = true;
                         } else if (data === 'false') {
                             data = false;
                         } else {
-                            this.logger.warn(`Response expected type "${typeExpected}" is not true or false`);
+                            this.logger.warn(`Response expected type "${preSets.typeExpected}" is not true or false`);
 
                             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                                 errorcode: 'invalidresponse',
@@ -688,7 +687,7 @@ export class CoreWSProvider {
                             });
                         }
                     } else {
-                        this.logger.warn('Response of type "' + typeof data + `" received, expecting "${typeExpected}"`);
+                        this.logger.warn('Response of type "' + typeof data + `" received, expecting "${preSets.typeExpected}"`);
 
                         throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                             errorcode: 'invalidresponse',
@@ -696,7 +695,7 @@ export class CoreWSProvider {
                         });
                     }
                 } else {
-                    this.logger.warn('Response of type "' + typeof data + `" received, expecting "${typeExpected}"`);
+                    this.logger.warn('Response of type "' + typeof data + `" received, expecting "${preSets.typeExpected}"`);
 
                     throw await this.createCannotConnectSiteError(preSets.siteUrl, {
                         errorcode: 'invalidresponse',
@@ -752,9 +751,7 @@ export class CoreWSProvider {
                 throw this.createHttpError(error, error.status);
             }
 
-            throw new CoreError(Translate.instant('core.serverconnection', {
-                details: CoreTextUtils.getErrorMessageFromError(error) ?? 'Unknown error',
-            }));
+            throw new CoreError(Translate.instant('core.serverconnection'));
         });
     }
 
@@ -1299,7 +1296,7 @@ export type CoreWSPreSets = {
     /**
      * Defaults to 'object'. Use it when you expect a type that's not an object|array.
      */
-    typeExpected?: CoreWSTypeExpected;
+    typeExpected?: string;
 
     /**
      * Defaults to false. Clean multibyte Unicode chars from data.
@@ -1312,8 +1309,6 @@ export type CoreWSPreSets = {
      */
     splitRequest?: CoreWSPreSetsSplitRequest;
 };
-
-export type CoreWSTypeExpected = 'boolean'|'number'|'string'|'jsonstring'|'object';
 
 /**
  * Options to split a request.

@@ -66,13 +66,11 @@ export class AddonModQuizPreflightModalComponent implements OnInit {
         }
 
         try {
-            const quiz = this.quiz;
-
             await Promise.all(this.rules.map(async (rule) => {
                 // Check if preflight is required for rule and, if so, get the component to render it.
                 const required = await AddonModQuizAccessRuleDelegate.isPreflightCheckRequiredForRule(
                     rule,
-                    quiz,
+                    this.quiz!,
                     this.attempt,
                     this.prefetch,
                     this.siteId,

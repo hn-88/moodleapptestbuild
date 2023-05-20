@@ -33,6 +33,7 @@ import { CoreDynamicComponent } from './dynamic-component/dynamic-component';
 import { CoreEmptyBoxComponent } from './empty-box/empty-box';
 import { CoreFileComponent } from './file/file';
 import { CoreFilesComponent } from './files/files';
+import { CoreIconComponent } from './icon/icon';
 import { CoreIframeComponent } from './iframe/iframe';
 import { CoreInfiniteLoadingComponent } from './infinite-loading/infinite-loading';
 import { CoreInputErrorsComponent } from './input-errors/input-errors';
@@ -81,6 +82,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreFileComponent,
         CoreFilesComponent,
         CoreGroupSelectorComponent,
+        CoreIconComponent,
         CoreIframeComponent,
         CoreInfiniteLoadingComponent,
         CoreInputErrorsComponent,
@@ -134,6 +136,7 @@ import { CoreSheetModalComponent } from '@components/sheet-modal/sheet-modal';
         CoreFileComponent,
         CoreFilesComponent,
         CoreGroupSelectorComponent,
+        CoreIconComponent,
         CoreIframeComponent,
         CoreInfiniteLoadingComponent,
         CoreInputErrorsComponent,

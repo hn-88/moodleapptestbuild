@@ -59,7 +59,7 @@ export class CoreLoginSitePage implements OnInit {
 
     @ViewChild('siteFormEl') formElement?: ElementRef;
 
-    siteForm!: FormGroup;
+    siteForm: FormGroup;
     fixedSites?: CoreLoginSiteInfoExtended[];
     filteredSites?: CoreLoginSiteInfoExtended[];
     siteSelector: CoreLoginSiteSelectorListMethod = 'sitefinder';
@@ -68,17 +68,15 @@ export class CoreLoginSitePage implements OnInit {
     sites: CoreLoginSiteInfoExtended[] = [];
     hasSites = false;
     loadingSites = false;
-    searchFunction!: (search: string) => void;
-    showScanQR!: boolean;
+    searchFunction: (search: string) => void;
+    showScanQR: boolean;
     enteredSiteUrl?: CoreLoginSiteInfoExtended;
-    siteFinderSettings!: CoreLoginSiteFinderSettings;
+    siteFinderSettings: CoreLoginSiteFinderSettings;
 
-    constructor(protected formBuilder: FormBuilder) {}
+    constructor(
+        protected formBuilder: FormBuilder,
+    ) {
 
-    /**
-     * Initialize the component.
-     */
-    async ngOnInit(): Promise<void> {
         let url = '';
         this.siteSelector = CoreConstants.CONFIG.multisitesdisplay;
 
@@ -94,10 +92,8 @@ export class CoreLoginSitePage implements OnInit {
         };
 
         // Load fixed sites if they're set.
-        const sites = await CoreLoginHelper.getAvailableSites();
-
-        if (sites.length) {
-            url = await this.initSiteSelector();
+        if (CoreLoginHelper.hasSeveralFixedSites()) {
+            url = this.initSiteSelector();
         } else if (CoreConstants.CONFIG.enableonboarding && !CorePlatform.isIOS()) {
             this.initOnboarding();
         }
@@ -126,7 +122,12 @@ export class CoreLoginSitePage implements OnInit {
 
             this.loadingSites = false;
         }, 1000);
+    }
 
+    /**
+     * Initialize the component.
+     */
+    ngOnInit(): void {
         this.showKeyboard = !!CoreNavigator.getRouteBooleanParam('showKeyboard');
     }
 
@@ -135,9 +136,8 @@ export class CoreLoginSitePage implements OnInit {
      *
      * @returns URL of the first site.
      */
-    protected async initSiteSelector(): Promise<string> {
-        const availableSites = await CoreLoginHelper.getAvailableSites();
-        this.fixedSites = this.extendCoreLoginSiteInfo(<CoreLoginSiteInfoExtended[]> availableSites);
+    protected initSiteSelector(): string {
+        this.fixedSites = this.extendCoreLoginSiteInfo(<CoreLoginSiteInfoExtended[]> CoreLoginHelper.getFixedSites());
         this.siteSelector = 'list'; // In case it's not defined
 
         // Do not show images if none are set.
@@ -436,7 +436,11 @@ export class CoreLoginSitePage implements OnInit {
         ].filter(button => !!button);
 
         const alertElement = await CoreDomUtils.showAlertWithOptions({
-            header: errorTitle ?? Translate.instant('core.cannotconnect'),
+            header: errorTitle ?? (
+                siteExists
+                    ? Translate.instant('core.cannotconnect')
+                    : Translate.instant('core.sitenotfound')
+            ),
             message: errorMessage ?? Translate.instant('core.sitenotfoundhelp'),
             buttons: buttons as AlertButton[],
         });

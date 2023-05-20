@@ -15,7 +15,6 @@
 import { Injectable } from '@angular/core';
 import { CoreNetworkError } from '@classes/errors/network-error';
 import { CoreCourseActivitySyncBaseProvider } from '@features/course/classes/activity-sync';
-import { CoreSyncResult } from '@services/sync';
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreNetwork } from '@services/network';
@@ -81,7 +80,7 @@ export class AddonModSurveySyncProvider extends CoreCourseActivitySyncBaseProvid
                 ? this.syncSurvey(entry.surveyid, entry.userid, siteId)
                 : this.syncSurveyIfNeeded(entry.surveyid, entry.userid, siteId));
 
-            if (result && result.updated) {
+            if (result && result.answersSent) {
                 // Sync successful, send event.
                 CoreEvents.trigger(AddonModSurveySyncProvider.AUTO_SYNCED, {
                     surveyId: entry.surveyid,
@@ -151,7 +150,7 @@ export class AddonModSurveySyncProvider extends CoreCourseActivitySyncBaseProvid
     protected async performSyncSurvey(surveyId: number, userId: number, siteId: string): Promise<AddonModSurveySyncResult> {
         const result: AddonModSurveySyncResult = {
             warnings: [],
-            updated: false,
+            answersSent: false,
         };
 
         // Sync offline logs.
@@ -180,7 +179,7 @@ export class AddonModSurveySyncProvider extends CoreCourseActivitySyncBaseProvid
             try {
                 await AddonModSurvey.submitAnswersOnline(surveyId, data.answers, siteId);
 
-                result.updated = true;
+                result.answersSent = true;
 
                 // Answers sent, delete them.
                 await AddonModSurveyOffline.deleteSurveyAnswers(surveyId, siteId, userId);
@@ -191,7 +190,7 @@ export class AddonModSurveySyncProvider extends CoreCourseActivitySyncBaseProvid
                 }
 
                 // The WebService has thrown an error, this means that answers cannot be submitted. Delete them.
-                result.updated = true;
+                result.answersSent = true;
 
                 await AddonModSurveyOffline.deleteSurveyAnswers(surveyId, siteId, userId);
 
@@ -237,7 +236,9 @@ declare module '@singletons/events' {
 /**
  * Data returned by a assign sync.
  */
-export type AddonModSurveySyncResult = CoreSyncResult & {
+export type AddonModSurveySyncResult = {
+    warnings: string[]; // List of warnings.
+    answersSent: boolean; // Whether some data was sent to the server or offline data was updated.
     courseId?: number; // Course the survey belongs to (if known).
 };
 

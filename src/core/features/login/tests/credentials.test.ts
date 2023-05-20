@@ -18,26 +18,17 @@ import { CoreLoginError } from '@classes/errors/loginerror';
 import { CoreLoginComponentsModule } from '@features/login/components/components.module';
 import { CoreLoginCredentialsPage } from '@features/login/pages/credentials/credentials';
 import { CoreSites } from '@services/sites';
-import { Http } from '@singletons';
-import { of } from 'rxjs';
-import { CoreLoginHelper } from '../services/login-helper';
 
 describe('Credentials page', () => {
 
-    const siteUrl = 'https://campus.example.edu';
-
-    beforeEach(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        mockSingleton(Http, { get: () => of(null as any) });
-    });
-
     it('renders', async () => {
         // Arrange.
+        const siteUrl = 'https://campus.example.edu';
 
         mockSingleton(CoreSites, {
             getPublicSiteConfigByUrl: async () => ({
-                wwwroot: siteUrl,
-                httpswwwroot: siteUrl,
+                wwwroot: 'https://campus.example.edu',
+                httpswwwroot: 'https://campus.example.edu',
                 sitename: 'Example Campus',
                 guestlogin: 0,
                 rememberusername: 0,
@@ -53,8 +44,6 @@ describe('Credentials page', () => {
                 typeoflogin: 1,
             }),
         });
-
-        mockSingleton(CoreLoginHelper, { getAvailableSites: async () => [{ url: siteUrl, name: 'Example Campus' }] });
 
         // Act.
         const fixture = await renderPageComponent(CoreLoginCredentialsPage, {
@@ -80,11 +69,15 @@ describe('Credentials page', () => {
             },
         });
 
-        mockSingleton(CoreLoginHelper, { getAvailableSites: async () => [] });
-
         const fixture = await renderPageComponent(CoreLoginCredentialsPage, {
-            routeParams: { siteUrl, siteConfig: { supportpage: '' } },
-            imports: [CoreSharedModule, CoreLoginComponentsModule],
+            routeParams: {
+                siteUrl: 'https://campus.example.edu',
+                siteConfig: { supportpage: '' },
+            },
+            imports: [
+                CoreSharedModule,
+                CoreLoginComponentsModule,
+            ],
         });
 
         // Act.
@@ -96,6 +89,8 @@ describe('Credentials page', () => {
 
         for (let i = 0; i < 3; i++) {
             form.submit();
+
+            await fixture.whenRenderingDone();
             await fixture.whenStable();
         }
 

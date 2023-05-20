@@ -1261,7 +1261,7 @@ export class CoreSitesProvider {
                     siteUrl: site.siteUrl,
                     siteUrlWithoutProtocol: site.siteUrl.replace(/^https?:\/\//, '').toLowerCase(),
                     fullName: siteInfo?.fullname,
-                    siteName: siteInfo?.sitename,
+                    siteName: CoreConstants.CONFIG.sitename == '' ? siteInfo?.sitename: CoreConstants.CONFIG.sitename,
                     avatar: siteInfo?.userpictureurl,
                     siteHomeId: siteInfo?.siteid || 1,
                     loggedOut: !!site.loggedOut,
@@ -2105,16 +2105,6 @@ export type CoreLoginSiteInfo = {
      * Countrycode of the site.
      */
     countrycode?: string;
-
-    /**
-     * Is staging site.
-     */
-    staging?: boolean;
-
-    /**
-     * Class to apply to site item.
-     */
-    className?: string;
 };
 
 /**

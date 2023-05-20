@@ -14,10 +14,10 @@
 
 import { AddonLegacyNotificationsNotificationsSource } from '@addons/notifications/classes/legacy-notifications-source';
 import { AddonNotificationsNotificationsSource } from '@addons/notifications/classes/notifications-source';
-import { AddonNotificationsPushNotification } from '@addons/notifications/services/handlers/push-click';
-import { AddonNotifications, AddonNotificationsNotificationMessageFormatted } from '@addons/notifications/services/notifications';
+import { AddonNotificationsNotificationData } from '@addons/notifications/services/handlers/push-click';
 import {
     AddonNotificationsHelper,
+    AddonNotificationsNotificationToRender,
 } from '@addons/notifications/services/notifications-helper';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -39,15 +39,21 @@ import { CoreDomUtils } from '@services/utils/dom';
 export class AddonNotificationsNotificationPage implements OnInit, OnDestroy {
 
     notifications?: AddonNotificationSwipeItemsManager;
-    notification?: AddonNotificationsNotificationMessageFormatted;
+    subject = ''; // Notification subject.
+    content = ''; // Notification content.
+    userIdFrom = -1; // User ID who sent the notification.
     profileImageUrlFrom?: string; // Avatar of the user who sent the notification.
+    userFromFullName?: string; // Name of the user who sent the notification.
+    iconUrl?: string; // Icon URL.
+    modname?: string; // Module name.
     loaded = false;
+    timecreated = 0;
 
     // Actions data.
     actions: CoreContentLinksAction[] = [];
-    protected contextUrl?: string;
-    protected courseId?: number;
-    protected actionsData?: Record<string, string|number>; // Extra data to handle the URL.
+    contextUrl?: string;
+    courseId?: number;
+    actionsData?: Record<string, unknown>; // Extra data to handle the URL.
 
     /**
      * @inheritdoc
@@ -64,11 +70,31 @@ export class AddonNotificationsNotificationPage implements OnInit, OnDestroy {
             return;
         }
 
-        this.notification = 'subject' in notification ?
-            notification :
-            await AddonNotifications.convertPushToMessage(notification);
+        if ('subject' in notification) {
+            this.subject = notification.subject;
+            this.content = notification.mobiletext || notification.fullmessagehtml;
+            this.userIdFrom = notification.useridfrom;
+            this.profileImageUrlFrom = notification.profileimageurlfrom;
+            this.userFromFullName = notification.userfromfullname;
+            this.iconUrl = notification.iconurl;
+            if (notification.moodlecomponent?.startsWith('mod_') && notification.iconurl) {
+                const modname = notification.moodlecomponent.substring(4);
+                if (notification.iconurl.match('/theme/image.php/[^/]+/' + modname + '/[-0-9]*/') ||
+                        notification.iconurl.match('/theme/image.php/[^/]+/' + notification.moodlecomponent + '/[-0-9]*/')) {
+                    this.modname = modname;
+                }
+            }
+            this.timecreated = notification.timecreated;
+        } else {
+            this.subject = notification.title || '';
+            this.content = notification.message || '';
+            this.userIdFrom = notification.userfromid ? Number(notification.userfromid) : -1;
+            this.profileImageUrlFrom = notification.senderImage;
+            this.userFromFullName = notification.userfromfullname;
+            this.timecreated = Number(notification.date ?? 0);
+        }
 
-        await this.loadActions(this.notification);
+        await this.loadActions(notification);
         AddonNotificationsHelper.markNotificationAsRead(notification);
 
         this.loaded = true;
@@ -127,7 +153,7 @@ export class AddonNotificationsNotificationPage implements OnInit, OnDestroy {
      * @param notification Notification.
      * @returns Promise resolved when done.
      */
-    async loadActions(notification: AddonNotificationsNotificationMessageFormatted): Promise<void> {
+    async loadActions(notification: AddonNotificationsNotification): Promise<void> {
         if (!notification.contexturl && (!notification.customdata || !notification.customdata.appurl)) {
             // No URL, nothing to do.
             return;
@@ -135,7 +161,7 @@ export class AddonNotificationsNotificationPage implements OnInit, OnDestroy {
 
         let actions: CoreContentLinksAction[] = [];
         this.actionsData = notification.customdata;
-        this.contextUrl = notification.contexturl || undefined;
+        this.contextUrl = notification.contexturl;
         this.courseId = 'courseid' in notification ? notification.courseid : undefined;
 
         // Treat appurl first if any.
@@ -205,4 +231,4 @@ class AddonNotificationSwipeItemsManager extends CoreSwipeNavigationItemsManager
 
 }
 
-type AddonNotificationsNotification = AddonNotificationsNotificationMessageFormatted | AddonNotificationsPushNotification;
+type AddonNotificationsNotification = AddonNotificationsNotificationToRender | AddonNotificationsNotificationData;

@@ -162,10 +162,6 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
             cmId: this.workshop.coursemodule,
         });
 
-        if (!this.data.assessment.form) {
-            return;
-        }
-
         if (this.edit) {
             try {
                 const offlineAssessment = await AddonModWorkshopOffline.getAssessment(this.workshop.id, this.assessmentId);
@@ -180,7 +176,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
                 }
 
                 // Override assessment plugins values.
-                this.data.assessment.form.current = AddonModWorkshop.parseFields(
+                this.data.assessment.form!.current = AddonModWorkshop.parseFields(
                     CoreUtils.objectToArrayOfObjects(offlineData, 'name', 'value'),
                 );
 
@@ -225,7 +221,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
         try {
             this.data.selectedValues = await AddonWorkshopAssessmentStrategyDelegate.getOriginalValues(
                 this.strategy,
-                this.data.assessment.form,
+                this.data.assessment.form!,
                 this.workshop.id,
             );
         } finally {
@@ -249,7 +245,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
      * @returns True if data has changed.
      */
     hasDataChanged(): boolean {
-        if (!this.assessmentStrategyLoaded || !this.workshop.strategy) {
+        if (!this.assessmentStrategyLoaded) {
             return false;
         }
 
@@ -273,7 +269,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
         }
 
         return AddonWorkshopAssessmentStrategyDelegate.hasDataChanged(
-            this.workshop.strategy,
+            this.workshop.strategy!,
             this.originalData.selectedValues,
             this.data.selectedValues,
         );
@@ -285,10 +281,6 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
      * @returns Promise resolved when done, rejected if assessment could not be saved.
      */
     async saveAssessment(): Promise<void> {
-        if (!this.data.assessment?.form) {
-            return;
-        }
-
         const files = CoreFileSession.getFiles(
             AddonModWorkshopProvider.COMPONENT,
             this.workshop.id + '_' + this.assessmentId,
@@ -336,7 +328,7 @@ export class AddonModWorkshopAssessmentStrategyComponent implements OnInit, OnDe
                     this.workshop,
                     this.data.selectedValues,
                     text,
-                    this.data.assessment.form,
+                    this.data.assessment!.form!,
                     attachmentsId,
                 );
             } catch (errors) {

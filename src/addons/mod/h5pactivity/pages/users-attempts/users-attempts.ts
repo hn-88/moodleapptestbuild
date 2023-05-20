@@ -32,7 +32,6 @@ import {
 @Component({
     selector: 'page-addon-mod-h5pactivity-users-attempts',
     templateUrl: 'users-attempts.html',
-    styleUrls: ['users-attempts.scss'],
 })
 export class AddonModH5PActivityUsersAttemptsPage implements OnInit {
 
@@ -209,10 +208,6 @@ export class AddonModH5PActivityUsersAttemptsPage implements OnInit {
      * @param user User to open.
      */
     openUser(user: AddonModH5PActivityUserAttemptsFormatted): void {
-        if (!user.attempts.length) {
-            return;
-        }
-
         CoreNavigator.navigate(`../userattempts/${user.userid}`);
     }
 

@@ -141,12 +141,8 @@ ion-card.core-course-list-item {
 
 // Card layout.
 ion-card.core-course-list-card {
-    &::part(native) {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        height: 100%;
-    }
+    display: flex;
+    flex-direction: column;
 
     height: calc(100% - var(--card-vertical-margin) - var(--card-vertical-margin));
     margin-top: var(--card-vertical-margin);

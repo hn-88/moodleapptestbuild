@@ -76,9 +76,7 @@ export class FileTransferObjectMock extends FileTransferObject {
     abort(): void {
         if (this.xhr) {
             this.xhr.abort();
-            this.reject?.(
-                new FileTransferErrorMock(FileTransferErrorMock.ABORT_ERR, this.source || '', this.target || '', 0, '', ''),
-            );
+            this.reject!(new FileTransferErrorMock(FileTransferErrorMock.ABORT_ERR, this.source!, this.target!, 0, '', ''));
         }
     }
 

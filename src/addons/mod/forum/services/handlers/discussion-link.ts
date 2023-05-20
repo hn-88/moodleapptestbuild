@@ -65,8 +65,12 @@ export class AddonModForumDiscussionLinkHandlerService extends CoreContentLinksH
                     pageParams.parent = parseInt(params.parent);
                 }
 
+                const path = cmId && courseId
+                    ? `${AddonModForumModuleHandlerService.PAGE_NAME}/${courseId}/${cmId}/${discussionId}`
+                    : `${AddonModForumModuleHandlerService.PAGE_NAME}/discussion/${discussionId}`;
+
                 CoreNavigator.navigateToSitePath(
-                    `${AddonModForumModuleHandlerService.PAGE_NAME}/discussion/${discussionId}`,
+                    path,
                     { siteId, params: pageParams },
                 );
             },

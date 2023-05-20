@@ -548,15 +548,3 @@ export type AddonModBBBRecordingsWSTableData = {
 export type AddonModBBBRecordingsTableData = AddonModBBBRecordingsWSTableData & {
     parsedData: Record<string, string|number|boolean>[];
 };
-
-/**
- * Recording playback types.
- */
-export enum AddonModBBBRecordingPlaybackTypes {
-    NOTES = 'notes',
-    PODCAST = 'podcast',
-    PRESENTATION = 'presentation',
-    SCREENSHARE = 'screenshare',
-    STATISTICS = 'statistics',
-    VIDEO = 'video',
-}

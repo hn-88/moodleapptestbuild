@@ -20,7 +20,7 @@ import { CoreFileUploaderStoreFilesResult } from '@features/fileuploader/service
 import { CoreNetwork } from '@services/network';
 import { CoreFileEntry } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
-import { CoreSync, CoreSyncResult } from '@services/sync';
+import { CoreSync } from '@services/sync';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreUtils } from '@services/utils/utils';
 import { Translate, makeSingleton } from '@singletons';
@@ -639,4 +639,7 @@ export type AddonModWorkshopAutoSyncData = {
     warnings: string[];
 };
 
-export type AddonModWorkshopSyncResult = CoreSyncResult;
+export type AddonModWorkshopSyncResult = {
+    warnings: string[];
+    updated: boolean;
+};

@@ -46,6 +46,7 @@ import { CoreViewerImageComponent } from '@features/viewer/components/image/imag
 import { CoreFormFields, CoreForms } from '../../singletons/form';
 import { CoreModalLateralTransitionEnter, CoreModalLateralTransitionLeave } from '@classes/modal-lateral-transition';
 import { CoreZoomLevel } from '@features/settings/services/settings-helper';
+import { AddonFilterMultilangHandler } from '@addons/filter/multilang/services/handlers/multilang';
 import { CoreSites } from '@services/sites';
 import { NavigationStart } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -57,8 +58,6 @@ import { CoreSiteError } from '@classes/errors/siteerror';
 import { CoreUserSupport } from '@features/user/services/support';
 import { CoreErrorInfoComponent } from '@components/error-info/error-info';
 import { CorePlatform } from '@services/platform';
-import { CoreCancellablePromise } from '@classes/cancellable-promise';
-import { CoreLang } from '@services/lang';
 
 /*
  * "Utils" service with helper functions for UI, DOM elements and HTML code.
@@ -1170,7 +1169,7 @@ export class CoreDomUtilsProvider {
 
         if (hasHTMLTags && !CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('3.7')) {
             // Treat multilang.
-            options.message = await CoreLang.filterMultilang(<string> options.message);
+            options.message = await AddonFilterMultilangHandler.filter(<string> options.message);
         }
 
         const alertId = <string> Md5.hashAsciiStr((options.header || '') + '#' + (options.message || ''));
@@ -1370,7 +1369,7 @@ export class CoreDomUtilsProvider {
         if (typeof error !== 'string' && 'title' in error && error.title) {
             alertOptions.header = error.title || undefined;
         } else if (message === Translate.instant('core.sitenotfoundhelp')) {
-            alertOptions.header = Translate.instant('core.cannotconnect');
+            alertOptions.header = Translate.instant('core.sitenotfound');
         } else if (this.isSiteUnavailableError(message)) {
             alertOptions.header = CoreSites.isLoggedIn()
                 ? Translate.instant('core.connectionlost')
@@ -1444,7 +1443,7 @@ export class CoreDomUtilsProvider {
         }
 
         return this.showErrorModal(
-            typeof errorMessage == 'string' && errorMessage && error ? error : defaultError,
+            typeof errorMessage == 'string' && errorMessage ? error! : defaultError,
             needsTranslate,
             autocloseTime,
         );
@@ -1917,62 +1916,32 @@ export class CoreDomUtilsProvider {
      * @param element The element to search in.
      * @returns Promise resolved with a boolean: whether there was any image to load.
      */
-    waitForImages(element: HTMLElement): CoreCancellablePromise<boolean> {
+    async waitForImages(element: HTMLElement): Promise<boolean> {
         const imgs = Array.from(element.querySelectorAll('img'));
+        const promises: Promise<void>[] = [];
+        let hasImgToLoad = false;
 
-        if (imgs.length === 0) {
-            return CoreCancellablePromise.resolve(false);
-        }
+        imgs.forEach((img) => {
+            if (img && !img.complete) {
+                hasImgToLoad = true;
 
-        let completedImages = 0;
-        let waitedForImages = false;
-        const listeners: WeakMap<Element, () => unknown> = new WeakMap();
-        const imageCompleted = (resolve: (result: boolean) => void) => {
-            completedImages++;
-
-            if (completedImages === imgs.length) {
-                resolve(waitedForImages);
-            }
-        };
-
-        return new CoreCancellablePromise<boolean>(
-            resolve => {
-                for (const img of imgs) {
-                    if (!img || img.complete) {
-                        imageCompleted(resolve);
-
-                        continue;
-                    }
-
-                    waitedForImages = true;
-
-                    // Wait for image to load or fail.
-                    const imgCompleted = (): void => {
-                        img.removeEventListener('load', imgCompleted);
-                        img.removeEventListener('error', imgCompleted);
-
-                        imageCompleted(resolve);
+                // Wait for image to load or fail.
+                promises.push(new Promise((resolve) => {
+                    const imgLoaded = (): void => {
+                        resolve();
+                        img.removeEventListener('load', imgLoaded);
+                        img.removeEventListener('error', imgLoaded);
                     };
 
-                    img.addEventListener('load', imgCompleted);
-                    img.addEventListener('error', imgCompleted);
+                    img.addEventListener('load', imgLoaded);
+                    img.addEventListener('error', imgLoaded);
+                }));
+            }
+        });
 
-                    listeners.set(img, imgCompleted);
-                }
-            },
-            () => {
-                imgs.forEach(img => {
-                    const listener = listeners.get(img);
+        await Promise.all(promises);
 
-                    if (!listener) {
-                        return;
-                    }
-
-                    img.removeEventListener('load', listener);
-                    img.removeEventListener('error', listener);
-                });
-            },
-        );
+        return hasImgToLoad;
     }
 
     /**
@@ -2063,17 +2032,12 @@ export class CoreDomUtilsProvider {
      *
      * @param className Class name.
      * @param enable Whether to add or remove the class.
-     * @param options Legacy options, deprecated since 4.1.
      */
-    toggleModeClass(
-        className: string,
-        enable = false,
-        options: { includeLegacy: boolean } = { includeLegacy: false },
-    ): void {
+    toggleModeClass(className: string, enable?: boolean): void {
         document.documentElement.classList.toggle(className, enable);
 
         // @deprecated since 4.1
-        document.body.classList.toggle(className, enable && options.includeLegacy);
+        document.body.classList.toggle(className, enable);
     }
 
 }

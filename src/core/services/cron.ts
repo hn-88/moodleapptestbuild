@@ -54,7 +54,7 @@ export class CoreCronDelegateService {
     async initializeDatabase(): Promise<void> {
         try {
             await CoreApp.createTablesFromSchema(APP_SCHEMA);
-        } catch {
+        } catch (e) {
             // Ignore errors.
         }
 
@@ -144,24 +144,21 @@ export class CoreCronDelegateService {
      * @param siteId Site ID. If not defined, all sites.
      * @returns Promise resolved when the handler finishes or reaches max time, rejected if it fails.
      */
-    protected async executeHandler(name: string, force?: boolean, siteId?: string): Promise<void> {
-        this.logger.debug('Executing handler: ' + name);
+    protected executeHandler(name: string, force?: boolean, siteId?: string): Promise<void> {
+        return new Promise((resolve, reject): void => {
+            this.logger.debug('Executing handler: ' + name);
 
-        try {
             // Wrap the call in Promise.resolve to make sure it's a promise.
-            const promise = Promise.resolve(this.handlers[name].execute?.(siteId, force));
+            Promise.resolve(this.handlers[name].execute!(siteId, force)).then(resolve).catch(reject).finally(() => {
+                clearTimeout(cancelTimeout);
+            });
 
-            await CoreUtils.timeoutPromise(promise, CoreCronDelegateService.MAX_TIME_PROCESS);
-        } catch (error) {
-            if (error.timeout) {
+            const cancelTimeout = setTimeout(() => {
                 // The handler took too long. Resolve because we don't want to retry soon.
                 this.logger.debug(`Resolving execution of handler '${name}' because it took too long.`);
-
-                return;
-            }
-
-            throw error;
-        }
+                resolve();
+            }, CoreCronDelegateService.MAX_TIME_PROCESS);
+        });
     }
 
     /**
@@ -213,21 +210,20 @@ export class CoreCronDelegateService {
      * @returns Handler's interval.
      */
     protected getHandlerInterval(name: string): number {
-        if (this.handlers[name] === undefined) {
+        if (!this.handlers[name] || !this.handlers[name].getInterval) {
             // Invalid, return default.
             return CoreCronDelegateService.DEFAULT_INTERVAL;
         }
 
         // Don't allow intervals lower than the minimum.
-        const handlerInterval = this.handlers[name].getInterval?.();
+        const minInterval = CoreCronDelegateService.MIN_INTERVAL;
+        const handlerInterval = this.handlers[name].getInterval!();
 
         if (!handlerInterval) {
             return CoreCronDelegateService.DEFAULT_INTERVAL;
+        } else {
+            return Math.max(minInterval, handlerInterval);
         }
-
-        const minInterval = CoreCronDelegateService.MIN_INTERVAL;
-
-        return Math.max(minInterval, handlerInterval);
     }
 
     /**
@@ -255,7 +251,7 @@ export class CoreCronDelegateService {
             const time = Number(entry.value);
 
             return isNaN(time) ? 0 : time;
-        } catch {
+        } catch (err) {
             return 0; // Not set, return 0.
         }
     }
@@ -267,7 +263,12 @@ export class CoreCronDelegateService {
      * @returns True if handler uses network or not defined, false otherwise.
      */
     protected handlerUsesNetwork(name: string): boolean {
-        return this.handlers[name]?.usesNetwork?.() ?? true;
+        if (!this.handlers[name] || !this.handlers[name].usesNetwork) {
+            // Invalid, return default.
+            return true;
+        }
+
+        return this.handlers[name].usesNetwork!();
     }
 
     /**
@@ -307,7 +308,12 @@ export class CoreCronDelegateService {
      * @returns True if handler is a sync process and can be manually executed or not defined, false otherwise.
      */
     protected isHandlerManualSync(name: string): boolean {
-        return this.handlers[name]?.canManualSync?.() ?? this.isHandlerSync(name);
+        if (!this.handlers[name] || !this.handlers[name].canManualSync) {
+            // Invalid, return default.
+            return this.isHandlerSync(name);
+        }
+
+        return this.handlers[name].canManualSync!();
     }
 
     /**
@@ -317,7 +323,12 @@ export class CoreCronDelegateService {
      * @returns True if handler is a sync process or not defined, false otherwise.
      */
     protected isHandlerSync(name: string): boolean {
-        return this.handlers[name]?.isSync?.() ?? true;
+        if (!this.handlers[name] || !this.handlers[name].isSync) {
+            // Invalid, return default.
+            return true;
+        }
+
+        return this.handlers[name].isSync!();
     }
 
     /**

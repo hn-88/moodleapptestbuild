@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, Input, Optional, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { CoreError } from '@classes/errors/error';
 import { CoreTabsComponent } from '@components/tabs/tabs';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
@@ -334,16 +333,15 @@ export class AddonModFeedbackIndexComponent extends CoreCourseModuleMainActivity
                     return label;
                 });
 
-                item.chartData = parsedData.map((dataItem) => Number(dataItem.answercount));
+                item.chartData = parsedData.map((dataItem) => <number> dataItem.answercount);
 
-                if (item.typ === 'multichoicerated') {
+                if (item.typ == 'multichoicerated') {
                     item.average = parsedData.reduce((prev, current) => prev + Number(current.avg), 0.0);
                 }
 
                 const subtype = item.presentation.charAt(0);
 
-                // Display bar chart if there are no answers to avoid division by 0 error.
-                const single = subtype !== 'c' && item.chartData.some((count) => count > 0);
+                const single = subtype != 'c';
                 item.chartType = single ? 'doughnut' : 'bar';
                 item.templateName = 'chart';
                 break;
@@ -479,11 +477,14 @@ export class AddonModFeedbackIndexComponent extends CoreCourseModuleMainActivity
      * @inheritdoc
      */
     protected sync(): Promise<AddonModFeedbackSyncResult> {
-        if (!this.feedback) {
-            throw new CoreError('Cannot sync without a feedback.');
-        }
+        return AddonModFeedbackSync.syncFeedback(this.feedback!.id);
+    }
 
-        return AddonModFeedbackSync.syncFeedback(this.feedback.id);
+    /**
+     * @inheritdoc
+     */
+    protected hasSyncSucceed(result: AddonModFeedbackSyncResult): boolean {
+        return result.updated;
     }
 
     /**

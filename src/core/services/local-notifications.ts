@@ -71,8 +71,9 @@ export class CoreLocalNotificationsProvider {
     async initialize(): Promise<void> {
         await CorePlatform.ready();
 
-        // Request permission when the app starts.
-        LocalNotifications.requestPermission();
+        if (!this.isAvailable()) {
+            return;
+        }
 
         // Listen to events.
         this.triggerSubscription = LocalNotifications.on('trigger').subscribe((notification: ILocalNotification) => {
@@ -110,8 +111,8 @@ export class CoreLocalNotificationsProvider {
         });
 
         CoreEvents.on(CoreEvents.SITE_DELETED, (site) => {
-            if (site?.id) {
-                this.cancelSiteNotifications(site.id);
+            if (site) {
+                this.cancelSiteNotifications(site.id!);
             }
         });
     }
@@ -363,16 +364,15 @@ export class CoreLocalNotificationsProvider {
             }
 
             return stored.at === triggered;
-        } catch {
-            const notificationId = notification.id || 0;
+        } catch (err) {
             if (useQueue) {
-                const queueId = 'isTriggered-' + notificationId;
+                const queueId = 'isTriggered-' + notification.id;
 
-                return this.queueRunner.run(queueId, () => LocalNotifications.isTriggered(notificationId), {
+                return this.queueRunner.run(queueId, () => LocalNotifications.isTriggered(notification.id!), {
                     allowRepeated: true,
                 });
             } else {
-                return LocalNotifications.isTriggered(notificationId);
+                return LocalNotifications.isTriggered(notification.id || 0);
             }
         }
     }

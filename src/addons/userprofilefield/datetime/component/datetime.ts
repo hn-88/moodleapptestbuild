@@ -36,8 +36,7 @@ export class AddonUserProfileFieldDatetimeComponent extends CoreUserProfileField
     format?: string;
     min?: string;
     max?: string;
-    valueNumber?: number;
-    displayValue?: string;
+    valueNumber = 0;
     monthNames?: string[];
     displayTimezone?: string;
 
@@ -47,12 +46,6 @@ export class AddonUserProfileFieldDatetimeComponent extends CoreUserProfileField
      * @param field Field to render.
      */
     protected initForNonEdit(field: CoreUserProfileField): void {
-        if (field.displayvalue) {
-            this.displayValue = field.displayvalue;
-
-            return;
-        }
-
         this.valueNumber = Number(field.value);
     }
 

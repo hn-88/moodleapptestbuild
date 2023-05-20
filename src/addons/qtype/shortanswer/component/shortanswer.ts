@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ElementRef } from '@angular/core';
+import { Component, OnInit, ElementRef } from '@angular/core';
 
 import { AddonModQuizTextQuestion, CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 
@@ -24,7 +24,9 @@ import { AddonModQuizTextQuestion, CoreQuestionBaseComponent } from '@features/q
     templateUrl: 'addon-qtype-shortanswer.html',
     styleUrls: ['shortanswer.scss'],
 })
-export class AddonQtypeShortAnswerComponent extends CoreQuestionBaseComponent<AddonModQuizTextQuestion> {
+export class AddonQtypeShortAnswerComponent extends CoreQuestionBaseComponent implements OnInit {
+
+    textQuestion?: AddonModQuizTextQuestion;
 
     constructor(elementRef: ElementRef) {
         super('AddonQtypeShortAnswerComponent', elementRef);
@@ -33,8 +35,9 @@ export class AddonQtypeShortAnswerComponent extends CoreQuestionBaseComponent<Ad
     /**
      * @inheritdoc
      */
-    init(): void {
+    ngOnInit(): void {
         this.initInputTextComponent();
+        this.textQuestion = this.question;
     }
 
 }

@@ -36,7 +36,7 @@ export class CoreSettingsSectionsSource extends CoreRoutedItemsManagerSource<Cor
             {
                 name: 'core.settings.spaceusage',
                 path: 'spaceusage',
-                icon: 'fas-list-check',
+                icon: 'fas-tasks',
             },
             {
                 name: 'core.settings.synchronization',

@@ -14,15 +14,13 @@
 
 import { Component, ElementRef, Input, OnInit } from '@angular/core';
 import {
-    CoreCourse,
     CoreCourseModuleCompletionStatus,
     CoreCourseModuleCompletionTracking,
     CoreCourseProvider,
 } from '@features/course/services/course';
-import { CoreCourseHelper, CoreCourseModuleData, CoreCourseSection } from '@features/course/services/course-helper';
+import { CoreCourseHelper, CoreCourseSection } from '@features/course/services/course-helper';
 import { CoreCourseFormatDelegate } from '@features/course/services/format-delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
-import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { ModalController } from '@singletons';
 import { CoreDom } from '@singletons/dom';
@@ -77,15 +75,11 @@ export class CoreCourseCourseIndexComponent implements OnInit {
         }
 
         // Clone sections to add information.
-        const site = CoreSites.getRequiredCurrentSite();
-
-        const enableIndentation = await CoreCourse.isCourseIndentationEnabled(site, this.course.id);
-
         this.sectionsToRender = this.sections
             .filter((section) => !CoreCourseHelper.isSectionStealth(section))
             .map((section) => {
                 const modules = section.modules
-                    .filter((module) => this.renderModule(section, module))
+                    .filter((module) => !CoreCourseHelper.isModuleStealth(module, section) && !module.noviewlink)
                     .map((module) => {
                         const completionStatus = !completionEnabled || module.completiondata === undefined ||
                         module.completiondata.tracking == CoreCourseModuleCompletionTracking.COMPLETION_TRACKING_NONE
@@ -98,7 +92,6 @@ export class CoreCourseCourseIndexComponent implements OnInit {
                             course: module.course,
                             visible: !!module.visible,
                             uservisible: CoreCourseHelper.canUserViewModule(module, section),
-                            indented: enableIndentation && module.indent > 0,
                             completionStatus,
                         };
                     });
@@ -162,27 +155,6 @@ export class CoreCourseCourseIndexComponent implements OnInit {
         ModalController.dismiss({ event, sectionId, moduleId });
     }
 
-    /**
-     * Check whether a module should be rendered or not.
-     *
-     * @param section Section.
-     * @param module Module
-     * @returns Whether the module should be rendered or not.
-     */
-    protected renderModule(section: CoreCourseSection, module: CoreCourseModuleData): boolean {
-        if (CoreCourseHelper.isModuleStealth(module, section)) {
-            return false;
-        }
-
-        const site = CoreSites.getRequiredCurrentSite();
-
-        if (site.isVersionGreaterEqualThan('4.2')) {
-            return true;
-        }
-
-        return !module.noviewlink;
-    }
-
 }
 
 type CourseIndexSection = {
@@ -198,7 +170,6 @@ type CourseIndexSection = {
         id: number;
         course: number;
         visible: boolean;
-        indented: boolean;
         uservisible: boolean;
         completionStatus?: CoreCourseModuleCompletionStatus;
     }[];

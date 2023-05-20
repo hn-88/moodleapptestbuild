@@ -45,18 +45,18 @@ export class CoreMainMenuHomePage implements OnInit {
     /**
      * @inheritdoc
      */
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         this.deepLinkManager = new CoreMainMenuDeepLinkManager();
 
-        await this.loadSiteName();
+        this.loadSiteName();
 
         this.subscription = CoreMainMenuHomeDelegate.getHandlersObservable().subscribe((handlers) => {
             handlers && this.initHandlers(handlers);
         });
 
         // Refresh the enabled flags if site is updated.
-        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, async () => {
-            await this.loadSiteName();
+        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
+            this.loadSiteName();
         }, CoreSites.getCurrentSiteId());
     }
 
@@ -99,9 +99,8 @@ export class CoreMainMenuHomePage implements OnInit {
     /**
      * Load the site name.
      */
-    protected async loadSiteName(): Promise<void> {
-        const site = CoreSites.getRequiredCurrentSite();
-        this.siteName = await site.getSiteName() || '';
+    protected loadSiteName(): void {
+        this.siteName = CoreSites.getRequiredCurrentSite().getSiteName() || '';
     }
 
     /**

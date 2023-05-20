@@ -61,8 +61,6 @@ export class AddonModForumPushClickHandlerService implements CorePushNotificatio
         const cmId = Number(data.cmid);
         const pageParams: Params = {
             forumId: Number(data.instance),
-            cmId,
-            courseId,
         };
 
         if (data.postid || contextUrlParams.urlHash) {
@@ -70,11 +68,11 @@ export class AddonModForumPushClickHandlerService implements CorePushNotificatio
         }
 
         await CoreUtils.ignoreErrors(
-            AddonModForum.invalidateDiscussionPosts(discussionId, undefined, notification.site),
+            AddonModForum.invalidateDiscussionPosts(pageParams.discussionId, undefined, notification.site),
         );
 
         await CoreNavigator.navigateToSitePath(
-            `${AddonModForumModuleHandlerService.PAGE_NAME}/discussion/${discussionId}`,
+            `${AddonModForumModuleHandlerService.PAGE_NAME}/${courseId}/${cmId}/${discussionId}`,
             { siteId: notification.site, params: pageParams },
         );
     }

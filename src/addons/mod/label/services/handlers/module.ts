@@ -52,7 +52,7 @@ export class AddonModLabelModuleHandlerService extends CoreModuleHandlerBase imp
         module.description = '';
 
         return {
-            icon: this.getIconSrc(),
+            icon: '',
             title,
             a11yTitle: '',
             class: 'addon-mod-label-handler',
@@ -72,13 +72,6 @@ export class AddonModLabelModuleHandlerService extends CoreModuleHandlerBase imp
      */
     async manualCompletionAlwaysShown(): Promise<boolean> {
         return true;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    getIconSrc(): string {
-        return '';
     }
 
 }

@@ -18,11 +18,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { CoreSharedModule } from '@/core/shared.module';
 import { AddonModLessonComponentsModule } from './components/components.module';
 
-import { AddonModLessonIndexPage } from './pages/index';
-import { CoreEditorComponentsModule } from '@features/editor/components/components.module';
-import { AddonModLessonPlayerPage } from '@addons/mod/lesson/pages/player/player';
-import { CanLeaveGuard } from '@guards/can-leave';
-import { AddonModLessonUserRetakePage } from '@addons/mod/lesson/pages/user-retake/user-retake';
+import { AddonModLessonIndexPage } from './pages/index/index.page';
 
 const routes: Routes = [
     {
@@ -31,12 +27,11 @@ const routes: Routes = [
     },
     {
         path: ':courseId/:cmId/player',
-        component: AddonModLessonPlayerPage,
-        canDeactivate: [CanLeaveGuard],
+        loadChildren: () => import('./pages/player/player.module').then( m => m.AddonModLessonPlayerPageModule),
     },
     {
         path: ':courseId/:cmId/user-retake/:userId',
-        component: AddonModLessonUserRetakePage,
+        loadChildren: () => import('./pages/user-retake/user-retake.module').then( m => m.AddonModLessonUserRetakePageModule),
     },
 ];
 
@@ -44,13 +39,10 @@ const routes: Routes = [
     imports: [
         RouterModule.forChild(routes),
         CoreSharedModule,
-        CoreEditorComponentsModule,
         AddonModLessonComponentsModule,
     ],
     declarations: [
         AddonModLessonIndexPage,
-        AddonModLessonPlayerPage,
-        AddonModLessonUserRetakePage,
     ],
 })
 export class AddonModLessonLazyModule {}

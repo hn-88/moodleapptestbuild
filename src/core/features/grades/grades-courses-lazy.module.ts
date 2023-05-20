@@ -21,7 +21,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 
 import { CoreGradesCoursePage } from './pages/course/course.page';
 import { CoreGradesCoursePageModule } from './pages/course/course.module';
-import { CoreGradesCoursesPage } from './pages/courses/courses';
+import { CoreGradesCoursesPage } from './pages/courses/courses.page';
 
 const mobileRoutes: Routes = [
     {

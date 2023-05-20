@@ -39,6 +39,7 @@ export class CoreUserParticipantsPage implements OnInit, AfterViewInit, OnDestro
     searchQuery: string | null = null;
     searchInProgress = false;
     searchEnabled = false;
+    showSearchBox = false;
     fetchMoreParticipantsFailed = false;
 
     @ViewChild(CoreSplitViewComponent) splitView!: CoreSplitViewComponent;
@@ -72,14 +73,8 @@ export class CoreUserParticipantsPage implements OnInit, AfterViewInit, OnDestro
      */
     async ngAfterViewInit(): Promise<void> {
         await this.fetchInitialParticipants();
-        await this.participants.start(this.splitView);
-    }
 
-    /**
-     * @inheritdoc
-     */
-    async ionViewDidEnter(): Promise<void> {
-        await this.participants.start();
+        this.participants.start(this.splitView);
     }
 
     /**
@@ -87,6 +82,20 @@ export class CoreUserParticipantsPage implements OnInit, AfterViewInit, OnDestro
      */
     ngOnDestroy(): void {
         this.participants.destroy();
+    }
+
+    /**
+     * Show or hide search box.
+     */
+    toggleSearch(): void {
+        this.showSearchBox = !this.showSearchBox;
+
+        if (this.showSearchBox) {
+            // Make search bar visible.
+            this.splitView.menuContent.scrollToTop();
+        } else {
+            this.clearSearch();
+        }
     }
 
     /**

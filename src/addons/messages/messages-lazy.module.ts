@@ -12,112 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { conditionalRoutes } from '@/app/app-routing.module';
-import { CoreSharedModule } from '@/core/shared.module';
-import { AddonMessagesContacts35Page } from '@addons/messages/pages/contacts-35/contacts';
-import { AddonMessagesContactsPage } from '@addons/messages/pages/contacts/contacts';
-import { AddonMessagesDiscussionPage } from '@addons/messages/pages/discussion/discussion';
-import { AddonMessagesDiscussions35Page } from '@addons/messages/pages/discussions-35/discussions';
-import { AddonMessagesGroupConversationsPage } from '@addons/messages/pages/group-conversations/group-conversations';
-import { AddonMessagesSearchPage } from '@addons/messages/pages/search/search';
-import { AddonMessagesMainMenuHandlerService } from '@addons/messages/services/handlers/mainmenu';
 import { Injector, NgModule } from '@angular/core';
 import { Route, RouterModule, ROUTES, Routes } from '@angular/router';
-import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
 
 import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
-import { CoreSearchComponentsModule } from '@features/search/components/components.module';
-import { CoreScreen } from '@services/screen';
 import { AddonMessagesIndexGuard } from './guards';
 
-/**
- * Build module routes.
- *
- * @param injector Injector.
- * @returns Routes.
- */
+export const DISCUSSION_ROUTES: Route[] = [
+    {
+        path: 'discussion/user/:userId',
+        loadChildren: () => import('./pages/discussion/discussion.module')
+            .then(m => m.AddonMessagesDiscussionPageModule),
+    },
+    {
+        path: 'discussion/:conversationId',
+        loadChildren: () => import('./pages/discussion/discussion.module')
+            .then(m => m.AddonMessagesDiscussionPageModule),
+    },
+];
+
 function buildRoutes(injector: Injector): Routes {
-    const discussionRoutes: Route[] = [
-        {
-            path: 'discussion/user/:userId',
-            component: AddonMessagesDiscussionPage,
-        },
-        {
-            path: 'discussion/:conversationId',
-            component: AddonMessagesDiscussionPage,
-        },
-    ];
-
-    const mobileRoutes: Routes = [
-        {
-            path: 'contacts', // 3.6 or greater.
-            component: AddonMessagesContactsPage,
-        },
-        {
-            path: 'index',
-            data: { mainMenuTabRoot: AddonMessagesMainMenuHandlerService.PAGE_NAME },
-            component: AddonMessagesDiscussions35Page,
-        },
-        {
-            path: 'contacts-35', // 3.5.
-            component: AddonMessagesContacts35Page,
-        },
-        {
-            path: 'group-conversations', // 3.6 or greater.
-            data: { mainMenuTabRoot: AddonMessagesMainMenuHandlerService.PAGE_NAME },
-            component: AddonMessagesGroupConversationsPage,
-        },
-        {
-            path: 'search',
-            component: AddonMessagesSearchPage,
-        },
-    ]
-        .reduce((routes, mobileRoute) => [
-            ...routes,
-            mobileRoute,
-            ...discussionRoutes.map(discussionRoute => ({
-                ...discussionRoute,
-                path: `${mobileRoute.path}/${discussionRoute.path}`,
-            })),
-        ], []);
-
-    const tabletRoutes: Routes = [
-        {
-            path: 'contacts', // 3.6 or greater.
-            component: AddonMessagesContactsPage,
-            children: discussionRoutes,
-        },
-        {
-            path: 'index',
-            data: { mainMenuTabRoot: AddonMessagesMainMenuHandlerService.PAGE_NAME },
-            component: AddonMessagesDiscussions35Page,
-            children: discussionRoutes,
-        },
-        {
-            path: 'contacts-35', // 3.5.
-            component: AddonMessagesContacts35Page,
-            children: discussionRoutes,
-        },
-        {
-            path: 'group-conversations', // 3.6 or greater.
-            data: { mainMenuTabRoot: AddonMessagesMainMenuHandlerService.PAGE_NAME },
-            component: AddonMessagesGroupConversationsPage,
-            children: discussionRoutes,
-        },
-        {
-            path: 'search',
-            component: AddonMessagesSearchPage,
-            children: discussionRoutes,
-        },
-    ];
-
     return [
-        ...conditionalRoutes(mobileRoutes, () => CoreScreen.isMobile),
-        ...conditionalRoutes(tabletRoutes, () => CoreScreen.isTablet),
-        ...discussionRoutes,
+        {
+            path: 'index', // 3.5.
+            loadChildren: () =>
+                import('./pages/discussions-35/discussions.module').then(m => m.AddonMessagesDiscussions35PageModule),
+        },
+        {
+            path: 'contacts-35', // 3.5.
+            loadChildren: () => import('./pages/contacts-35/contacts.module').then(m => m.AddonMessagesContacts35PageModule),
+        },
+        {
+            path: 'group-conversations', // 3.6 or greater.
+            loadChildren: () => import('./pages/group-conversations/group-conversations.module')
+                .then(m => m.AddonMessagesGroupConversationsPageModule),
+        },
+        ...DISCUSSION_ROUTES,
+        {
+            path: 'search',
+            loadChildren: () => import('./pages/search/search.module')
+                .then(m => m.AddonMessagesSearchPageModule),
+        },
+        {
+            path: 'contacts', // 3.6 or greater.
+            loadChildren: () => import('./pages/contacts/contacts.module')
+                .then(m => m.AddonMessagesContactsPageModule),
+        },
         {
             path: 'message-settings',
-            loadChildren: () => import('./messages-settings-lazy.module').then(m => m.AddonMessagesSettingsLazyModule),
+            loadChildren: () => import('./pages/settings/settings.module').then(m => m.AddonMessagesSettingsPageModule),
         },
         ...buildTabMainRoutes(injector, {
             canActivate: [AddonMessagesIndexGuard],
@@ -126,19 +69,6 @@ function buildRoutes(injector: Injector): Routes {
 }
 
 @NgModule({
-    imports: [
-        CoreSharedModule,
-        CoreSearchComponentsModule,
-        CoreMainMenuComponentsModule,
-    ],
-    declarations: [
-        AddonMessagesContacts35Page,
-        AddonMessagesContactsPage,
-        AddonMessagesDiscussionPage,
-        AddonMessagesDiscussions35Page,
-        AddonMessagesGroupConversationsPage,
-        AddonMessagesSearchPage,
-    ],
     exports: [RouterModule],
     providers: [
         {
@@ -149,4 +79,4 @@ function buildRoutes(injector: Injector): Routes {
         },
     ],
 })
-export class AddonMessagesLazyModule {}
+export class AddonMessagesLazyModule { }

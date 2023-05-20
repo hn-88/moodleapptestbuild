@@ -109,9 +109,7 @@ export class CoreUpdateManagerProvider {
      * @returns Promise resolved when done.
      */
     protected async checkCurrentSiteAllowed(): Promise<void> {
-        const sites = await CoreLoginHelper.getAvailableSites();
-
-        if (!sites.length) {
+        if (!CoreLoginHelper.getFixedSites()) {
             return;
         }
 

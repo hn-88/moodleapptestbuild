@@ -261,7 +261,7 @@ export class CoreUrlUtilsProvider {
 
         try {
             let lang = await CoreLang.getCurrentLanguage();
-            lang = CoreLang.getParentLanguage() || lang;
+            lang = CoreLang.getParentLanguage(lang) || lang;
 
             return docsUrl.replace('/en/', '/' + lang + '/');
         } catch (error) {
@@ -270,10 +270,10 @@ export class CoreUrlUtilsProvider {
     }
 
     /**
-     * Returns the Youtube Embed Video URL or undefined if not found.
+     * Returns the Youtube Embed Video URL or null if not found.
      *
      * @param url URL
-     * @returns Youtube Embed Video URL or undefined if not found.
+     * @returns Youtube Embed Video URL or null if not found.
      */
     getYoutubeEmbedUrl(url?: string): string | void {
         if (!url) {
@@ -504,7 +504,7 @@ export class CoreUrlUtilsProvider {
      */
     removeProtocolAndWWW(url: string): string {
         // Remove protocol.
-        url = url.replace(/^.*?:\/\//, '');
+        url = url.replace(/.*?:\/\//g, '');
         // Remove www.
         url = url.replace(/^www./, '');
 

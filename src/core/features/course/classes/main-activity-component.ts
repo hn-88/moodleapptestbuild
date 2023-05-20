@@ -20,9 +20,9 @@ import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreCourse } from '../services/course';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreDomUtils } from '@services/utils/dom';
+import { CoreWSExternalWarning } from '@services/ws';
 import { CoreCourseContentsPage } from '../pages/contents/contents';
 import { CoreSites } from '@services/sites';
-import { CoreSyncResult } from '@services/sync';
 
 /**
  * Template class to easily create CoreCourseModuleMainComponent of activities.
@@ -188,35 +188,33 @@ export class CoreCourseModuleMainActivityComponent extends CoreCourseModuleMainR
      *
      * @returns Promise resolved when done.
      */
-    protected async sync(): Promise<CoreSyncResult> {
-        return {
-            updated: false,
-            warnings: [],
-        };
+    protected async sync(): Promise<unknown> {
+        return {};
     }
 
     /**
-     * Checks if sync has updated data on the server.
+     * Checks if sync has succeed from result sync data.
      *
      * @param result Data returned on the sync function.
-     * @returns If data has been updated or not.
+     * @returns If suceed or not.
      */
-    protected hasSyncSucceed(result: CoreSyncResult): boolean {
-        return result.updated;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected hasSyncSucceed(result: unknown): boolean {
+        return true;
     }
 
     /**
      * Tries to synchronize the activity.
      *
      * @param showErrors If show errors to the user of hide them.
-     * @returns Promise resolved with true if sync hast updated data to the server, false otherwise.
+     * @returns Promise resolved with true if sync succeed, or false if failed.
      */
     protected async syncActivity(showErrors: boolean = false): Promise<boolean> {
         try {
-            const result = await this.sync();
+            const result = <{warnings?: CoreWSExternalWarning[]}> await this.sync();
 
-            if (result.warnings.length) {
-                CoreDomUtils.showAlert(undefined, result.warnings[0]);
+            if (result?.warnings?.length) {
+                CoreDomUtils.showErrorModal(result.warnings[0]);
             }
 
             return this.hasSyncSucceed(result);

@@ -12,24 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreSharedModule } from '@/core/shared.module';
 import { Injector, NgModule } from '@angular/core';
 import { RouterModule, ROUTES, Routes } from '@angular/router';
-import { CoreCoursesComponentsModule } from '@features/courses/components/components.module';
-import { CoreCoursesCategoriesPage } from '@features/courses/pages/categories/categories';
-import { CoreCoursesListPage } from '@features/courses/pages/list/list';
-import { CoreMainMenuComponentsModule } from '@features/mainmenu/components/components.module';
 import { buildTabMainRoutes } from '@features/mainmenu/mainmenu-tab-routing.module';
-import { CoreSearchComponentsModule } from '@features/search/components/components.module';
 import { CoreCoursesHelper } from './services/courses-helper';
 import { CoreCoursesMyCoursesMainMenuHandlerService } from './services/handlers/my-courses-mainmenu';
 
-/**
- * Build module routes.
- *
- * @param injector Injector.
- * @returns Routes.
- */
 function buildRoutes(injector: Injector): Routes {
     return [
         {
@@ -46,11 +34,15 @@ function buildRoutes(injector: Injector): Routes {
         },
         {
             path: 'categories/:id',
-            component: CoreCoursesCategoriesPage,
+            loadChildren: () =>
+                import('./pages/categories/categories.module')
+                    .then(m => m.CoreCoursesCategoriesPageModule),
         },
         {
             path: 'list',
-            component: CoreCoursesListPage,
+            loadChildren: () =>
+                import('./pages/list/list.module')
+                    .then(m => m.CoreCoursesListPageModule),
         },
         ...buildTabMainRoutes(injector, {
             redirectTo: 'my',
@@ -60,16 +52,6 @@ function buildRoutes(injector: Injector): Routes {
 }
 
 @NgModule({
-    imports: [
-        CoreSharedModule,
-        CoreCoursesComponentsModule,
-        CoreMainMenuComponentsModule,
-        CoreSearchComponentsModule,
-    ],
-    declarations: [
-        CoreCoursesCategoriesPage,
-        CoreCoursesListPage,
-    ],
     exports: [RouterModule],
     providers: [
         {

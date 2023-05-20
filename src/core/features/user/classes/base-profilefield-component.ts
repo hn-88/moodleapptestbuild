@@ -40,12 +40,11 @@ export abstract class CoreUserProfileFieldBaseComponent implements OnInit {
     modelName = '';
     value?: string;
     required?: boolean;
-    valueNotFiltered?: boolean;
 
     /**
      * @inheritdoc
      */
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         if (!this.field) {
             return;
         }
@@ -61,6 +60,7 @@ export abstract class CoreUserProfileFieldBaseComponent implements OnInit {
 
             return;
         }
+
     }
 
     /**
@@ -69,8 +69,7 @@ export abstract class CoreUserProfileFieldBaseComponent implements OnInit {
      * @param field Field to render.
      */
     protected initForNonEdit(field: CoreUserProfileField): void {
-        this.value = field.displayvalue ?? field.value;
-        this.valueNotFiltered = field.displayvalue === undefined || field.displayvalue === null;
+        this.value = field.value;
     }
 
     /**

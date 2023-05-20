@@ -13,13 +13,13 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
+import { CoreCourseProvider } from '@features/course/services/course';
 import {
     CoreCourseAccess,
     CoreCourseOptionsHandler,
     CoreCourseOptionsHandlerData,
 } from '@features/course/services/course-options-delegate';
 import { CoreCourseAnyCourseData, CoreCourses, CoreCourseUserAdminOrNavOptionIndexed } from '@features/courses/services/courses';
-import { CoreGradesHelper, GRADES_PAGE_NAME } from '@features/grades/services/grades-helper';
 import { makeSingleton } from '@singletons';
 import { CoreGrades } from '../grades';
 
@@ -35,15 +35,13 @@ export class CoreGradesCourseOptionHandlerService implements CoreCourseOptionsHa
     /**
      * @inheritdoc
      */
-    async invalidateEnabledForCourse(courseId: number, navOptions?: CoreCourseUserAdminOrNavOptionIndexed): Promise<void> {
-        await CoreGrades.invalidateCourseGradesPermissionsData(courseId);
-
+    invalidateEnabledForCourse(courseId: number, navOptions?: CoreCourseUserAdminOrNavOptionIndexed): Promise<void> {
         if (navOptions && navOptions.grades !== undefined) {
-            // No need to invalidate user courses.
-            return;
+            // No need to invalidate anything.
+            return Promise.resolve();
         }
 
-        await CoreCourses.invalidateUserCourses();
+        return CoreCourses.invalidateUserCourses();
     }
 
     /**
@@ -56,20 +54,20 @@ export class CoreGradesCourseOptionHandlerService implements CoreCourseOptionsHa
     /**
      * @inheritdoc
      */
-    async isEnabledForCourse(
+    isEnabledForCourse(
         courseId: number,
         accessData: CoreCourseAccess,
         navOptions?: CoreCourseUserAdminOrNavOptionIndexed,
-    ): Promise<boolean> {
-        const showGradebook = await CoreGradesHelper.showGradebook(courseId, accessData, navOptions);
-
-        if (!showGradebook) {
-            return false;
+    ): boolean | Promise<boolean> {
+        if (accessData && accessData.type == CoreCourseProvider.ACCESS_GUEST) {
+            return false; // Not enabled for guests.
         }
 
-        const canViewAllGrades = await CoreGrades.canViewAllGrades(courseId);
+        if (navOptions && navOptions.grades !== undefined) {
+            return navOptions.grades;
+        }
 
-        return !canViewAllGrades;
+        return CoreGrades.isPluginEnabledForCourse(courseId);
     }
 
     /**
@@ -79,7 +77,7 @@ export class CoreGradesCourseOptionHandlerService implements CoreCourseOptionsHa
         return {
             title: 'core.grades.grades',
             class: 'core-grades-course-handler',
-            page: GRADES_PAGE_NAME,
+            page: 'grades',
         };
     }
 

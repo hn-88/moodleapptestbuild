@@ -18,6 +18,7 @@ import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainResourceComponent } from '@features/course/classes/main-resource-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { CoreCourse } from '@features/course/services/course';
+import { CoreSites } from '@services/sites';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { CoreTextUtils } from '@services/utils/text';
 import { AddonModUrl, AddonModUrlDisplayOptions, AddonModUrlProvider, AddonModUrlUrl } from '../../services/url';
@@ -108,7 +109,8 @@ export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceCompo
 
         } catch {
             // Fallback in case is not prefetched.
-            const mod = await CoreCourse.getModule(this.module.id, this.courseId, undefined, false, false, undefined, 'url');
+            const mod =
+                await CoreCourse.getModule(this.module.id, this.courseId, undefined, false, false, undefined, 'url');
 
             this.name = mod.name;
             this.description = mod.description;
@@ -144,6 +146,16 @@ export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceCompo
             this.isVideo = CoreMimetypeUtils.isExtensionInGroup(extension, ['web_video']);
             this.isOther = !this.isImage && !this.isAudio && !this.isVideo;
         }
+
+        if (this.shouldIframe || (this.shouldEmbed && !this.isImage && !this.isAudio && !this.isVideo)) {
+            // Will be displayed in an iframe. Check if we need to auto-login.
+            const currentSite = CoreSites.getCurrentSite();
+
+            if (currentSite && this.url) {
+                // Format the URL to add auto-login if needed.
+                this.url = await currentSite.getAutoLoginUrl(this.url, false);
+            }
+        }
     }
 
     /**
@@ -177,11 +189,7 @@ export class AddonModUrlIndexComponent extends CoreCourseModuleMainResourceCompo
      */
     go(): void {
         this.logView();
-        if (!this.url) {
-            return;
-        }
-
-        AddonModUrlHelper.open(this.url);
+        AddonModUrlHelper.open(this.url!);
     }
 
 }

@@ -67,7 +67,7 @@ export class CoreContentLinksModuleGradeHandler extends CoreContentLinksHandlerB
         courseId?: number,
     ): CoreContentLinksAction[] | Promise<CoreContentLinksAction[]> {
 
-        const courseIdentifier = Number(courseId || params.courseid || params.cid);
+        courseId = Number(courseId || params.courseid || params.cid);
 
         return [{
             action: async (siteId): Promise<void> => {
@@ -79,14 +79,14 @@ export class CoreContentLinksModuleGradeHandler extends CoreContentLinksHandlerB
                     CoreCourseHelper.navigateToModule(
                         Number(params.id),
                         {
-                            courseId: courseIdentifier,
+                            courseId,
                             modName: this.useModNameToGetModule ? this.modName : undefined,
                             siteId,
                         },
                     );
                 } else if (this.canReview) {
                     // Use the goToReview function.
-                    this.goToReview(url, params, courseIdentifier, siteId);
+                    this.goToReview(url, params, courseId!, siteId);
                 } else {
                     // Not current user and cannot review it in the app, open it in browser.
                     site.openInBrowserWithAutoLogin(url);

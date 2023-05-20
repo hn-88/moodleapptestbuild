@@ -43,7 +43,7 @@ const appRoutes: Routes = [
     },
     {
         path: 'reload',
-        loadChildren: () => import('./mainmenu-reload-lazy.module').then( m => m.CoreMainMenuReloadLazyModule),
+        loadChildren: () => import('./pages/reload/reload.module').then( m => m.CoreMainMenuReloadPageModule),
     },
 ];
 

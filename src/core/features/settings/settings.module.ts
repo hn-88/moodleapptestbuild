@@ -39,7 +39,7 @@ const mainMenuMoreRoutes: Routes = [
     },
     {
         path: 'preferences',
-        loadChildren: () => import('./settings-site-lazy.module').then(m => m.CoreettingsSiteLazyModule),
+        loadChildren: () => import('./pages/site/site.module').then(m => m.CoreSitePreferencesPageModule),
     },
 ];
 

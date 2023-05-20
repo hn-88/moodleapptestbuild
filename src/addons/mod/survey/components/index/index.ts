@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnInit, Optional } from '@angular/core';
-import { CoreError } from '@classes/errors/error';
 import { CoreIonLoadingElement } from '@classes/ion-loading';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
@@ -118,8 +117,8 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
 
         if (sync) {
             // Try to synchronize the survey.
-            const updated = await this.syncActivity(showErrors);
-            if (updated) {
+            const answersSent = await this.syncActivity(showErrors);
+            if (answersSent) {
                 // Answers were sent, update the survey.
                 this.survey = await AddonModSurvey.getSurvey(this.courseId, this.module.id);
             }
@@ -131,18 +130,17 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
             : await AddonModSurveyOffline.hasAnswers(this.survey.id);
 
         if (!this.survey.surveydone && !this.hasOffline) {
-            await this.fetchQuestions(this.survey.id);
+            await this.fetchQuestions();
         }
     }
 
     /**
      * Convenience function to get survey questions.
      *
-     * @param surveyId Survey Id.
      * @returns Promise resolved when done.
      */
-    protected async fetchQuestions(surveyId: number): Promise<void> {
-        const questions = await AddonModSurvey.getQuestions(surveyId, { cmId: this.module.id });
+    protected async fetchQuestions(): Promise<void> {
+        const questions = await AddonModSurvey.getQuestions(this.survey!.id, { cmId: this.module.id });
 
         this.questions = AddonModSurveyHelper.formatQuestions(questions);
 
@@ -185,10 +183,6 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
      * Save options selected.
      */
     async submit(): Promise<void> {
-        if (!this.survey) {
-            return;
-        }
-
         let modal: CoreIonLoadingElement | undefined;
 
         try {
@@ -204,7 +198,7 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
                 });
             }
 
-            const online = await AddonModSurvey.submitAnswers(this.survey.id, this.survey.name, this.courseId, answers);
+            const online = await AddonModSurvey.submitAnswers(this.survey!.id, this.survey!.name, this.courseId, answers);
 
             CoreEvents.trigger(CoreEvents.ACTIVITY_DATA_SENT, { module: this.moduleName });
 
@@ -237,14 +231,22 @@ export class AddonModSurveyIndexComponent extends CoreCourseModuleMainActivityCo
     }
 
     /**
-     * @inheritdoc
+     * Performs the sync of the activity.
+     *
+     * @returns Promise resolved when done.
      */
-    protected async sync(): Promise<AddonModSurveySyncResult> {
-        if (!this.survey) {
-            throw new CoreError('Cannot sync without a survey.');
-        }
+    protected sync(): Promise<AddonModSurveySyncResult> {
+        return AddonModSurveySync.syncSurvey(this.survey!.id, this.currentUserId);
+    }
 
-        return AddonModSurveySync.syncSurvey(this.survey.id, this.currentUserId);
+    /**
+     * Checks if sync has succeed from result sync data.
+     *
+     * @param result Data returned on the sync function.
+     * @returns If suceed or not.
+     */
+    protected hasSyncSucceed(result: AddonModSurveySyncResult): boolean {
+        return result.answersSent;
     }
 
 }

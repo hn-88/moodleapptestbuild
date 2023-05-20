@@ -30,7 +30,6 @@ import { makeSingleton, Translate } from '@singletons';
 import { CoreError } from '@classes/errors/error';
 import { Observable, Subject } from 'rxjs';
 import { CoreTextUtils } from '@services/utils/text';
-import { CoreNavigator } from '@services/navigator';
 
 /**
  * Object with space usage and cache entries that can be erased.
@@ -462,7 +461,7 @@ export class CoreSettingsHelperProvider {
         const isDark = CoreDomUtils.hasModeClass('dark');
 
         if (isDark !== enable) {
-            CoreDomUtils.toggleModeClass('dark', enable, { includeLegacy: true });
+            CoreDomUtils.toggleModeClass('dark', enable);
             this.darkModeObservable.next(enable);
 
             CoreApp.setStatusBarColor();
@@ -476,39 +475,6 @@ export class CoreSettingsHelperProvider {
      */
     onDarkModeChange(): Observable<boolean> {
         return this.darkModeObservable;
-    }
-
-    /**
-     * Get if user enabled staging sites or not.
-     *
-     * @returns Staging sites.
-     */
-    async hasEnabledStagingSites(): Promise<boolean> {
-        const staging = await CoreConfig.get<number>('stagingSites', 0);
-
-        return !!staging;
-    }
-
-    /**
-     * Persist staging sites enabled status and refresh app to apply changes.
-     *
-     * @param enabled Enabled or disabled staging sites.
-     */
-    async setEnabledStagingSites(enabled: boolean): Promise<void> {
-        const reloadApp = !CoreSites.isLoggedIn();
-
-        if (reloadApp) {
-            await CoreDomUtils.showConfirm('Are you sure that you want to enable/disable staging sites?');
-        }
-
-        await CoreConfig.set('stagingSites', enabled ? 1 : 0);
-
-        if (!reloadApp) {
-            return;
-        }
-
-        await CoreNavigator.navigate('/');
-        window.location.reload();
     }
 
 }

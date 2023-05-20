@@ -682,20 +682,19 @@ export class AddonModLessonProvider {
         pageIndex: Record<number, AddonModLessonPageWSData>,
         result: AddonModLessonCheckAnswerResult,
     ): void {
-        // In LMS, this unformat float is done by the 'float' form field.
-        const parsedAnswer = CoreUtils.unformatFloat(<string> data.answer, true);
+
+        const parsedAnswer = parseFloat(<string> data.answer);
 
         // Set defaults.
         result.response = '';
         result.newpageid = 0;
 
-        if (!data.answer || parsedAnswer === false || parsedAnswer === '') {
+        if (!data.answer || isNaN(parsedAnswer)) {
             result.noanswer = true;
 
             return;
         }
 
-        data.answer = String(parsedAnswer); // Store the parsed answer in the supplied data so it uses the standard separator.
         result.useranswer = parsedAnswer;
         result.studentanswer = result.userresponse = String(result.useranswer);
 
@@ -3322,7 +3321,7 @@ export class AddonModLessonProvider {
             // Only 1 answer, add it to the table.
             result.feedback = this.addAnswerAndResponseToFeedback(
                 result.feedback,
-                CoreUtils.formatFloat(result.studentanswer),
+                result.studentanswer,
                 result.studentanswerformat || 1,
                 result.response,
                 className,

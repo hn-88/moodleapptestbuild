@@ -27,7 +27,6 @@ import {
     AddonModLessonProvider,
 } from './lesson';
 import { CoreTime } from '@singletons/time';
-import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Helper service that provides some features for quiz.
@@ -201,14 +200,17 @@ export class AddonModLessonHelperProvider {
             return question;
         }
 
+        let type = 'text';
+
         switch (pageData.page?.qtype) {
             case AddonModLessonProvider.LESSON_PAGE_TRUEFALSE:
             case AddonModLessonProvider.LESSON_PAGE_MULTICHOICE:
                 return this.getMultiChoiceQuestionData(questionForm, question, fieldContainer);
 
             case AddonModLessonProvider.LESSON_PAGE_NUMERICAL:
+                type = 'number';
             case AddonModLessonProvider.LESSON_PAGE_SHORTANSWER:
-                return this.getInputQuestionData(questionForm, question, fieldContainer, pageData.page.qtype);
+                return this.getInputQuestionData(questionForm, question, fieldContainer, type);
 
             case AddonModLessonProvider.LESSON_PAGE_ESSAY: {
                 return this.getEssayQuestionData(questionForm, question, fieldContainer);
@@ -299,21 +301,21 @@ export class AddonModLessonHelperProvider {
      * @param questionForm The form group where to add the controls.
      * @param question Basic question data.
      * @param fieldContainer HTMLElement containing the data.
-     * @param questionType Type of the question.
+     * @param type Type of the input.
      * @returns Question data.
      */
     protected getInputQuestionData(
         questionForm: FormGroup,
         question: AddonModLessonQuestion,
         fieldContainer: HTMLElement,
-        questionType: number,
+        type: string,
     ): AddonModLessonInputQuestion {
 
         const inputQuestion = <AddonModLessonInputQuestion> question;
         inputQuestion.template = 'shortanswer';
 
         // Get the input.
-        const input = fieldContainer.querySelector<HTMLInputElement>('input[type="text"], input[type="number"]');
+        const input = <HTMLInputElement> fieldContainer.querySelector('input[type="text"], input[type="number"]');
         if (!input) {
             return inputQuestion;
         }
@@ -322,14 +324,11 @@ export class AddonModLessonHelperProvider {
             id: input.id,
             name: input.name,
             maxlength: input.maxLength,
-            type: 'text', // Use text for numerical questions too to allow different decimal separators.
+            type,
         };
 
         // Init the control.
-        questionForm.addControl(input.name, this.formBuilder.control({
-            value: questionType === AddonModLessonProvider.LESSON_PAGE_NUMERICAL ? CoreUtils.formatFloat(input.value) : input.value,
-            disabled: input.readOnly,
-        }));
+        questionForm.addControl(input.name, this.formBuilder.control({ value: input.value, disabled: input.readOnly }));
 
         return inputQuestion;
     }

@@ -19,6 +19,7 @@ import { CoreFile } from '@services/file';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSiteBasicInfo, CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
+import { CoreUtils } from '@services/utils/utils';
 
 /**
  * Page to display the list of sites to choose one to store a shared file.
@@ -41,20 +42,19 @@ export class CoreSharedFilesChooseSitePage implements OnInit {
      * @inheritdoc
      */
     async ngOnInit(): Promise<void> {
-        try {
-            this.filePath = CoreNavigator.getRequiredRouteParam('filePath');
-            this.isInbox = !!CoreNavigator.getRouteBooleanParam('isInbox');
-        } catch (error) {
-            CoreDomUtils.showErrorModalDefault(error, 'Error reading file.');
+        this.filePath = CoreNavigator.getRouteParam('filePath');
+        this.isInbox = !!CoreNavigator.getRouteBooleanParam('isInbox');
+
+        if (!this.filePath) {
+            CoreDomUtils.showErrorModal('Error reading file.');
+            await CoreUtils.nextTick();
             CoreNavigator.back();
 
             return;
         }
 
-        if (this.filePath) {
-            const fileAndDir = CoreFile.getFileAndDirectoryFromPath(this.filePath);
-            this.fileName = fileAndDir.name;
-        }
+        const fileAndDir = CoreFile.getFileAndDirectoryFromPath(this.filePath);
+        this.fileName = fileAndDir.name;
 
         try {
             await Promise.all([
@@ -75,11 +75,7 @@ export class CoreSharedFilesChooseSitePage implements OnInit {
      * @returns Promise resolved when done.
      */
     protected async loadFile(): Promise<void> {
-        if (!this.filePath) {
-            return;
-        }
-
-        this.fileEntry = await CoreFile.getExternalFile(this.filePath);
+        this.fileEntry = await CoreFile.getExternalFile(this.filePath!);
         this.fileName = this.fileEntry.name;
     }
 
@@ -98,14 +94,10 @@ export class CoreSharedFilesChooseSitePage implements OnInit {
      * @param siteId Site ID.
      */
     async storeInSite(siteId: string): Promise<void> {
-        if (!this.fileEntry) {
-            return;
-        }
-
         this.loaded = false;
 
         try {
-            await CoreSharedFilesHelper.storeSharedFileInSite(this.fileEntry, siteId, this.isInbox);
+            await CoreSharedFilesHelper.storeSharedFileInSite(this.fileEntry!, siteId, this.isInbox);
 
             CoreNavigator.back();
         } finally {

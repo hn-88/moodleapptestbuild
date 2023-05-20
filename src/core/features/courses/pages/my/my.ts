@@ -42,7 +42,7 @@ import { CoreCourses } from '../../services/courses';
         useClass: PageLoadsManager,
     }],
 })
-export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
+export class CoreCoursesMyCoursesPage implements OnInit, OnDestroy, AsyncDirective {
 
     @ViewChild(CoreBlockComponent) block!: CoreBlockComponent;
 
@@ -61,9 +61,9 @@ export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
 
     constructor(protected loadsManager: PageLoadsManager) {
         // Refresh the enabled flags if site is updated.
-        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, async () => {
+        this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
             this.downloadCoursesEnabled = !CoreCourses.isDownloadCoursesDisabledInSite();
-            await this.loadSiteName();
+            this.loadSiteName();
 
         }, CoreSites.getCurrentSiteId());
 
@@ -78,13 +78,13 @@ export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
     /**
      * @inheritdoc
      */
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         this.downloadCoursesEnabled = !CoreCourses.isDownloadCoursesDisabledInSite();
 
         const deepLinkManager = new CoreMainMenuDeepLinkManager();
         deepLinkManager.treatLink();
 
-        await this.loadSiteName();
+        this.loadSiteName();
 
         this.loadContent(true);
     }
@@ -143,9 +143,8 @@ export class CoreCoursesMyPage implements OnInit, OnDestroy, AsyncDirective {
     /**
      * Load the site name.
      */
-    protected async loadSiteName(): Promise<void> {
-        const site = CoreSites.getRequiredCurrentSite();
-        this.siteName = await site.getSiteName() || '';
+    protected loadSiteName(): void {
+        this.siteName = CoreSites.getRequiredCurrentSite().getSiteName() || '';
     }
 
     /**

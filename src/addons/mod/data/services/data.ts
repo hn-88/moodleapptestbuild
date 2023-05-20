@@ -62,7 +62,6 @@ export enum AddonModDataAction {
     APPROVALSTATUS = 'approvalstatus',
     DELCHECK = 'delcheck', // Unused.
     EXPORT = 'export', // Unused.
-    ACTIONSMENU = 'actionsmenu',
 }
 
 export enum AddonModDataTemplateType {

@@ -103,10 +103,6 @@ export class AddonModWikiCreateLinkHandlerService extends CoreContentLinksHandle
 
                 try {
                     const route = CoreNavigator.getCurrentRoute({ pageComponent: AddonModWikiIndexPage });
-                    if (!route) {
-                        // Current view isn't wiki index.
-                        return;
-                    }
                     const subwikiId = parseInt(params.swid, 10);
                     const wikiId = parseInt(params.wid, 10);
                     let path = AddonModWikiModuleHandlerService.PAGE_NAME;
@@ -116,7 +112,7 @@ export class AddonModWikiCreateLinkHandlerService extends CoreContentLinksHandle
 
                     if (isSameWiki) {
                         // User is seeing the wiki, we can get the module from the wiki params.
-                        path = path + `/${route.snapshot.params.courseId}/${route.snapshot.params.cmId}/edit`;
+                        path = path + `/${route!.snapshot.params.courseId}/${route!.snapshot.params.cmId}/edit`;
                     } else if (wikiId) {
                         // The URL specifies which wiki it belongs to. Get the module.
                         const module = await CoreCourse.getModuleBasicInfoByInstance(

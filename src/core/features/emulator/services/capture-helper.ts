@@ -119,20 +119,24 @@ export class CoreEmulatorCaptureHelperProvider {
 
         if (mimetypes?.length) {
             // Search for a supported mimetype.
-            result.mimetype = mimetypes.find((mimetype) => {
+            for (let i = 0; i < mimetypes.length; i++) {
+                const mimetype = mimetypes[i];
                 const matches = mimetype.match(new RegExp('^' + type + '/'));
 
-                return matches?.length && window.MediaRecorder.isTypeSupported(mimetype);
-            });
+                if (matches?.length && window.MediaRecorder.isTypeSupported(mimetype)) {
+                    result.mimetype = mimetype;
+                    break;
+                }
+            }
         }
 
         if (result.mimetype) {
             // Found a supported mimetype in the mimetypes array, get the extension.
             result.extension = CoreMimetypeUtils.getExtension(result.mimetype);
-        } else if (type === 'video' && this.videoMimeType) {
+        } else if (type == 'video') {
             // No mimetype found, use default extension.
             result.mimetype = this.videoMimeType;
-            result.extension = this.possibleVideoMimeTypes[result.mimetype];
+            result.extension = this.possibleVideoMimeTypes[result.mimetype!];
         }
 
         return result;

@@ -51,8 +51,14 @@ export class AddonModGlossaryEditLinkHandlerService extends CoreContentLinksHand
                     );
 
                     await CoreNavigator.navigateToSitePath(
-                        AddonModGlossaryModuleHandlerService.PAGE_NAME + `/${module.course}/${module.id}/entry/new`,
-                        { siteId },
+                        AddonModGlossaryModuleHandlerService.PAGE_NAME + '/edit/0',
+                        {
+                            params: {
+                                courseId: module.course,
+                                cmId: module.id,
+                            },
+                            siteId,
+                        },
                     );
                 } catch (error) {
                     CoreDomUtils.showErrorModalDefault(error, 'addon.mod_glossary.errorloadingglossary', true);

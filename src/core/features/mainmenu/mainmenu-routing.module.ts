@@ -12,21 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { InjectionToken, Injector, ModuleWithProviders, NgModule } from '@angular/core';
+import { InjectionToken, ModuleWithProviders, NgModule } from '@angular/core';
 
-import { ModuleRoutes, ModuleRoutesConfig, resolveModuleRoutes } from '@/app/app-routing.module';
+import { ModuleRoutesConfig } from '@/app/app-routing.module';
 
-const MAIN_MENU_ROUTES = new InjectionToken('MAIN_MENU_ROUTES');
-
-/**
- * Resolve dynamic routes.
- *
- * @param injector Injector.
- * @returns Module routes.
- */
-export function resolveMainMenuRoutes(injector: Injector): ModuleRoutes {
-    return resolveModuleRoutes(injector, MAIN_MENU_ROUTES);
-}
+export const MAIN_MENU_ROUTES = new InjectionToken('MAIN_MENU_ROUTES');
 
 @NgModule()
 export class CoreMainMenuRoutingModule {

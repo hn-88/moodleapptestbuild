@@ -174,8 +174,7 @@ export class SQLiteDB {
             sql = equal ? '= ?' : '<> ?';
             params = Array.isArray(items) ? items : [items];
         } else {
-            const questionMarks = ',?'.repeat(items.length).substring(1);
-            sql = (equal ? '' : 'NOT ') + `IN (${questionMarks})`;
+            sql = (equal ? '' : 'NOT ') + 'IN (' + ',?'.repeat(items.length).substring(1) + ')';
             params = items;
         }
 
@@ -238,7 +237,7 @@ export class SQLiteDB {
         tableCheck?: string,
     ): string {
         const columnsSql: string[] = [];
-        let tableStructureSQL = '';
+        let sql = `CREATE TABLE IF NOT EXISTS ${name} (`;
 
         // First define all the columns.
         for (const index in columns) {
@@ -246,7 +245,7 @@ export class SQLiteDB {
             let columnSql: string = column.name || '';
 
             if (column.type) {
-                columnSql += ` ${column.type}`;
+                columnSql += ' ' + column.type;
             }
 
             if (column.primaryKey) {
@@ -274,25 +273,25 @@ export class SQLiteDB {
 
             columnsSql.push(columnSql);
         }
-        tableStructureSQL += columnsSql.join(', ');
+        sql += columnsSql.join(', ');
 
         // Now add the table constraints.
 
         if (primaryKeys && primaryKeys.length) {
-            tableStructureSQL += `, PRIMARY KEY (${primaryKeys.join(', ')})`;
+            sql += `, PRIMARY KEY (${primaryKeys.join(', ')})`;
         }
 
         if (uniqueKeys && uniqueKeys.length) {
             for (const index in uniqueKeys) {
                 const setOfKeys = uniqueKeys[index];
                 if (setOfKeys && setOfKeys.length) {
-                    tableStructureSQL += `, UNIQUE (${setOfKeys.join(', ')})`;
+                    sql += `, UNIQUE (${setOfKeys.join(', ')})`;
                 }
             }
         }
 
         if (tableCheck) {
-            tableStructureSQL += `, CHECK (${tableCheck})`;
+            sql += `, CHECK (${tableCheck})`;
         }
 
         for (const index in foreignKeys) {
@@ -302,18 +301,18 @@ export class SQLiteDB {
                 continue;
             }
 
-            tableStructureSQL += `, FOREIGN KEY (${foreignKey.columns.join(', ')}) REFERENCES ${foreignKey.table} `;
+            sql += `, FOREIGN KEY (${foreignKey.columns.join(', ')}) REFERENCES ${foreignKey.table} `;
 
             if (foreignKey.foreignColumns && foreignKey.foreignColumns.length) {
-                tableStructureSQL += `(${foreignKey.foreignColumns.join(', ')})`;
+                sql += `(${foreignKey.foreignColumns.join(', ')})`;
             }
 
             if (foreignKey.actions) {
-                tableStructureSQL += ` ${foreignKey.actions}`;
+                sql += ` ${foreignKey.actions}`;
             }
         }
 
-        return `CREATE TABLE IF NOT EXISTS ${name} (${tableStructureSQL})`;
+        return sql + ')';
     }
 
     /**
@@ -324,7 +323,7 @@ export class SQLiteDB {
     async close(): Promise<void> {
         await this.ready();
 
-        await this.db?.close();
+        await this.db!.close();
     }
 
     /**
@@ -356,7 +355,7 @@ export class SQLiteDB {
         countItem: string = 'COUNT(\'x\')',
     ): Promise<number> {
         if (select) {
-            select = `WHERE ${select}`;
+            select = 'WHERE ' + select;
         }
 
         return this.countRecordsSql(`SELECT ${countItem} FROM ${table} ${select}`, params);
@@ -471,7 +470,7 @@ export class SQLiteDB {
      */
     async deleteRecordsSelect(table: string, select: string = '', params?: SQLiteDBRecordValue[]): Promise<number> {
         if (select) {
-            select = `WHERE ${select}`;
+            select = 'WHERE ' + select;
         }
 
         const result = await this.execute(`DELETE FROM ${table} ${select}`, params);
@@ -502,7 +501,7 @@ export class SQLiteDB {
     async execute(sql: string, params?: SQLiteDBRecordValue[]): Promise<any> {
         await this.ready();
 
-        return this.db?.executeSql(sql, params);
+        return this.db!.executeSql(sql, params);
     }
 
     /**
@@ -517,7 +516,7 @@ export class SQLiteDB {
     async executeBatch(sqlStatements: (string | string[] | any)[]): Promise<void> {
         await this.ready();
 
-        await this.db?.sqlBatch(sqlStatements);
+        await this.db!.sqlBatch(sqlStatements);
     }
 
     /**
@@ -530,8 +529,22 @@ export class SQLiteDB {
             return;
         }
 
-        // Remove undefined entries.
-        Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+        // Remove undefined entries and convert null to "NULL".
+        for (const name in data) {
+            if (data[name] === undefined) {
+                delete data[name];
+            }
+        }
+    }
+
+    /**
+     * Format the data to where params.
+     *
+     * @param data Object data.
+     * @returns List of params.
+     */
+    protected formatDataToSQLParams(data: SQLiteDBRecordValues): SQLiteDBRecordValue[] {
+        return Object.keys(data).map((key) => data[key]!);
     }
 
     /**
@@ -574,7 +587,7 @@ export class SQLiteDB {
         params?: SQLiteDBRecordValue[],
     ): Promise<SQLiteDBRecordValue> {
         if (select) {
-            select = `WHERE ${select}`;
+            select = 'WHERE ' + select;
         }
 
         return this.getFieldSql(`SELECT ${field} FROM ${table} ${select}`, params);
@@ -635,7 +648,7 @@ export class SQLiteDB {
         fields: string = '*',
     ): Promise<T> {
         if (select) {
-            select = ` WHERE ${select}`;
+            select = ' WHERE ' + select;
         }
 
         return this.getRecordSql<T>(`SELECT ${fields} FROM ${table} ${select}`, params);
@@ -733,10 +746,10 @@ export class SQLiteDB {
         limitNum: number = 0,
     ): Promise<T[]> {
         if (select) {
-            select = ` WHERE ${select}`;
+            select = ' WHERE ' + select;
         }
         if (sort) {
-            sort = ` ORDER BY ${sort}`;
+            sort = ' ORDER BY ' + sort;
         }
 
         const sql = `SELECT ${fields} FROM ${table} ${select} ${sort}`;
@@ -765,7 +778,7 @@ export class SQLiteDB {
             if (limits[1] < 1) {
                 limits[1] = Number.MAX_VALUE;
             }
-            sql += ` LIMIT ${limits[0]}, ${limits[1]}`;
+            sql += ' LIMIT ' + limits[0] + ', ' + limits[1];
         }
 
         const result = await this.execute(sql, params);
@@ -794,7 +807,7 @@ export class SQLiteDB {
 
         return {
             sql: `INSERT OR REPLACE INTO ${table} (${fields}) VALUES (${questionMarks})`,
-            params: Object.values(data),
+            params: this.formatDataToSQLParams(data),
         };
     }
 
@@ -884,7 +897,7 @@ export class SQLiteDB {
     ): Promise<void> {
         try {
             await this.tableExists(oldTable);
-        } catch {
+        } catch (error) {
             // Old table does not exist, ignore.
             return;
         }
@@ -906,7 +919,7 @@ export class SQLiteDB {
 
         try {
             await this.dropTable(oldTable);
-        } catch {
+        } catch (error) {
             // Error deleting old table, ignore.
         }
     }
@@ -945,7 +958,7 @@ export class SQLiteDB {
     async open(): Promise<void> {
         await this.ready();
 
-        await this.db?.open();
+        await this.db!.open();
     }
 
     /**
@@ -1053,7 +1066,7 @@ export class SQLiteDB {
         }
 
         // Create the list of params using the "data" object and the params for the where clause.
-        let params = Object.values(data);
+        let params = this.formatDataToSQLParams(data);
         if (where && whereParams) {
             params = params.concat(whereParams);
         }
@@ -1077,19 +1090,19 @@ export class SQLiteDB {
             };
         }
 
+        const where: string[] = [];
         const params: SQLiteDBRecordValue[] = [];
 
-        const where = Object.keys(conditions).map((field) => {
-            const value = conditions[field];
+        for (const key in conditions) {
+            const value = conditions[key];
 
             if (value === undefined || value === null) {
-                return `${field} IS NULL`;
+                where.push(key + ' IS NULL');
+            } else {
+                where.push(key + ' = ?');
+                params.push(value);
             }
-
-            params.push(value);
-
-            return `${field} = ?`;
-        });
+        }
 
         return {
             sql: where.join(' AND '),
@@ -1117,7 +1130,7 @@ export class SQLiteDB {
 
         values.forEach((value) => {
             if (value === undefined || value === null) {
-                sql = `${field} IS NULL`;
+                sql = field + ' IS NULL';
             } else {
                 params.push(value);
             }
@@ -1125,14 +1138,14 @@ export class SQLiteDB {
 
         if (params && params.length) {
             if (sql !== '') {
-                sql += ' OR ';
+                sql = sql + ' OR ';
             }
 
             if (params.length == 1) {
-                sql += `${field} = ?`;
+                sql = sql + field + ' = ?';
             } else {
                 const questionMarks = ',?'.repeat(params.length).substring(1);
-                sql += ` ${field} IN (${questionMarks})`;
+                sql = sql + field + ' IN (' + questionMarks + ')';
             }
         }
 
@@ -1219,7 +1232,7 @@ export class SQLiteDB {
 }
 
 export type SQLiteDBRecordValues = {
-    [key: string]: SQLiteDBRecordValue;
+    [key: string]: SQLiteDBRecordValue | undefined | null;
 };
 
 export type SQLiteDBQueryParams = {
@@ -1227,4 +1240,4 @@ export type SQLiteDBQueryParams = {
     params: SQLiteDBRecordValue[];
 };
 
-export type SQLiteDBRecordValue = number | string  | undefined | null;
+export type SQLiteDBRecordValue = number | string;

@@ -15,23 +15,22 @@
 import {
     AddonNotifications,
     AddonNotificationsGetReadType,
-    AddonNotificationsNotificationMessageFormatted,
     AddonNotificationsProvider,
 } from '@addons/notifications/services/notifications';
+import { AddonNotificationsNotificationToRender } from '@addons/notifications/services/notifications-helper';
 import { CoreRoutedItemsManagerSource } from '@classes/items-management/routed-items-manager-source';
 
 /**
  * Provides a list of notifications.
  */
-export class AddonNotificationsNotificationsSource
-    extends CoreRoutedItemsManagerSource<AddonNotificationsNotificationMessageFormatted> {
+export class AddonNotificationsNotificationsSource extends CoreRoutedItemsManagerSource<AddonNotificationsNotificationToRender> {
 
     protected totals: Record<string, number> = {};
 
     /**
      * @inheritdoc
      */
-    getItemPath(notification: AddonNotificationsNotificationMessageFormatted): string {
+    getItemPath(notification: AddonNotificationsNotificationToRender): string {
         return notification.id.toString();
     }
 
@@ -48,7 +47,7 @@ export class AddonNotificationsNotificationsSource
      * @inheritdoc
      */
     protected async loadPageItems(page: number): Promise<{
-        items: AddonNotificationsNotificationMessageFormatted[];
+        items: AddonNotificationsNotificationToRender[];
         hasMoreItems: boolean;
     }> {
         const results = await this.loadNotifications(AddonNotificationsGetReadType.BOTH, page * this.getPageLength());
@@ -68,7 +67,7 @@ export class AddonNotificationsNotificationsSource
      * @returns Notifications and whether there are any more.
      */
     protected async loadNotifications(type: AddonNotificationsGetReadType, offset: number, limit?: number): Promise<{
-        notifications: AddonNotificationsNotificationMessageFormatted[];
+        notifications: AddonNotificationsNotificationToRender[];
         hasMoreNotifications: boolean;
     }> {
         limit = limit ?? this.getPageLength();
@@ -95,7 +94,7 @@ export class AddonNotificationsNotificationsSource
     /**
      * @inheritdoc
      */
-    protected setItems(notifications: AddonNotificationsNotificationMessageFormatted[], hasMoreItems: boolean): void {
+    protected setItems(notifications: AddonNotificationsNotificationToRender[], hasMoreItems: boolean): void {
         const sortedNotifications = notifications.slice(0);
 
         sortedNotifications.sort((a, b) => a.timecreated < b.timecreated ? 1 : -1);

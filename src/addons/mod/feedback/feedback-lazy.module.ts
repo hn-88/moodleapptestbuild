@@ -20,10 +20,6 @@ import { AddonModFeedbackIndexPage } from './pages/index/index';
 import { AddonModFeedbackAttemptsPage } from './pages/attempts/attempts';
 import { conditionalRoutes } from '@/app/app-routing.module';
 import { CoreScreen } from '@services/screen';
-import { AddonModFeedbackAttemptPage } from '@addons/mod/feedback/pages/attempt/attempt';
-import { AddonModFeedbackFormPage } from '@addons/mod/feedback/pages/form/form';
-import { CanLeaveGuard } from '@guards/can-leave';
-import { AddonModFeedbackNonRespondentsPage } from '@addons/mod/feedback/pages/nonrespondents/nonrespondents';
 
 const commonRoutes: Routes = [
     {
@@ -32,12 +28,12 @@ const commonRoutes: Routes = [
     },
     {
         path: ':courseId/:cmId/form',
-        component: AddonModFeedbackFormPage,
-        canDeactivate: [CanLeaveGuard],
+        loadChildren: () => import('./pages/form/form.module').then(m => m.AddonModFeedbackFormPageModule),
     },
     {
         path: ':courseId/:cmId/nonrespondents',
-        component: AddonModFeedbackNonRespondentsPage,
+        loadChildren: () => import('./pages/nonrespondents/nonrespondents.module')
+            .then(m => m.AddonModFeedbackNonRespondentsPageModule),
     },
 ];
 
@@ -49,7 +45,7 @@ const mobileRoutes: Routes = [
     },
     {
         path: ':courseId/:cmId/attempts/:attemptId',
-        component: AddonModFeedbackAttemptPage,
+        loadChildren: () => import('./pages/attempt/attempt.module').then(m => m.AddonModFeedbackAttemptPageModule),
     },
 ];
 
@@ -61,7 +57,7 @@ const tabletRoutes: Routes = [
         children: [
             {
                 path: ':attemptId',
-                component: AddonModFeedbackAttemptPage,
+                loadChildren: () => import('./pages/attempt/attempt.module').then(m => m.AddonModFeedbackAttemptPageModule),
             },
         ],
     },
@@ -79,11 +75,8 @@ const routes: Routes = [
         AddonModFeedbackComponentsModule,
     ],
     declarations: [
-        AddonModFeedbackAttemptsPage,
-        AddonModFeedbackFormPage,
         AddonModFeedbackIndexPage,
-        AddonModFeedbackNonRespondentsPage,
-        AddonModFeedbackAttemptPage,
+        AddonModFeedbackAttemptsPage,
     ],
 })
 export class AddonModFeedbackLazyModule {}

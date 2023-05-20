@@ -61,7 +61,7 @@ export class CoreCourseModuleDefaultHandler implements CoreCourseModuleHandler {
             const url = module.url;
 
             defaultData.buttons = [{
-                icon: 'fas-up-right-from-square',
+                icon: 'fas-external-link-alt',
                 label: 'core.openinbrowser',
                 action: (e: Event): void => {
                     e.preventDefault();

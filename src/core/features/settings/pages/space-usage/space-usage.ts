@@ -66,7 +66,7 @@ export class CoreSettingsSpaceUsagePage implements OnInit, OnDestroy {
 
             const site = await CoreSites.getSite(siteId);
             const siteInfo = site.getInfo();
-            siteEntry.siteName = await site.getSiteName();
+            siteEntry.siteName = site.getSiteName();
 
             if (siteInfo) {
                 siteEntry.siteUrl = siteInfo.siteurl;

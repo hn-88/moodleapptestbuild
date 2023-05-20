@@ -65,7 +65,7 @@ export class CoreMainMenuUserMenuComponent implements OnInit, OnDestroy {
         const currentSite = CoreSites.getRequiredCurrentSite();
         this.siteId = currentSite.getId();
         this.siteInfo = currentSite.getInfo();
-        this.siteName = await currentSite.getSiteName();
+        this.siteName = currentSite.getSiteName();
         this.siteUrl = currentSite.getURL();
         this.displaySwitchAccount = !currentSite.isFeatureDisabled('NoDelegate_SwitchAccount');
         this.displayContactSupport = new CoreUserAuthenticatedSupportConfig(currentSite).canContactSupport();

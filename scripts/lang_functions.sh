@@ -10,66 +10,58 @@ DEFAULT_LASTVERSION='4.1' # Update it every version.
 
 # Checks if AWS is available and configured.
 function check_aws {
-    if [ ! -z $AWS_SERVICE ]; then
-        return
-    fi
-
-    export AWS_SERVICE=1
+    AWS_SERVICE=1
 
     aws --version &> /dev/null
     if [ $? -ne 0 ]; then
-        export AWS_SERVICE=0
+        AWS_SERVICE=0
         echo 'AWS not installed. Check https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html for more info.'
         return
     fi
 
     # In order to login to AWS, use credentials file or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY vars.
     if [ ! -f ~/.aws/credentials ] && ([ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]); then
-        export AWS_SERVICE=0
+        AWS_SERVICE=0
+        lastversion=$DEFAULT_LASTVERSION
         echo 'AWS Cannot authenticate. Use aws configure or set the proper env vars.'
         return
     fi
 }
 
-function list_aws_files {
-    local folder="$1"
-    check_aws
-
-    if [ $AWS_SERVICE -eq 1 ]; then
-        export AWS_FOLDERS=`aws s3 ls s3://$BUCKET/$1`
-    else
-        export AWS_FOLDERS=[]
-    fi
-}
-
 # Get last version of Moodle to fetch latest languages.
-function get_lang_version {
-    if [ ! -z "${LANGVERSION}" ]; then
+function get_last_version {
+    if [ ! -z "${lastversion}" ]; then
         return
     fi
 
-    APP_VERSION=`jq -r '.versionname' ../moodle.config.json| cut -d. -f1-2`
-    if [ ! -z $APP_VERSION ]; then
-        export LANGVERSION=$APP_VERSION
-        echo "Using app version $LANGVERSION"
+    check_aws
+    if [ $AWS_SERVICE -eq 0 ]; then
+        lastversion=$DEFAULT_LASTVERSION
+        echo "Using default version $lastversion"
         return
     fi
 
-    list_aws_files ''
-    LANGVERSION=''
-    for folder in $AWS_FOLDERS; do
+    list=`aws s3 ls s3://$BUCKET/`
+    if [ $? -ne 0 ]; then
+        AWS_SERVICE=0
+        lastversion=$DEFAULT_LASTVERSION
+        echo "AWS Cannot authenticate. Using default version $lastversion"
+        return
+    fi
+
+    lastversion=''
+    for folder in $list; do
         if [ $folder != 'PRE' ]; then
-            LANGVERSION=${folder/\//}
+            lastversion=${folder/\//}
         fi
     done
 
-    if [ ! -z "${LANGVERSION}" ]; then
-        echo "Using last version $LANGVERSION detected"
+    if [ ! -z "${lastversion}" ]; then
+        echo "Last version $lastversion detected"
         return
     fi
 
-    LANGVERSION=$DEFAULT_LASTVERSION
-    echo "Using default version $LANGVERSION"
+    lastversion=$DEFAULT_LASTVERSION
 }
 
 # Create langfolder
@@ -79,23 +71,21 @@ function create_langfolder {
     fi
 }
 
-# Get language list from the installed ones (will not discover new translations).
-function get_language_folders {
-    list_aws_files "$LANGVERSION/"
-
+# Get all language list from AWS.
+function get_all_languages_aws {
+    langsfiles=`aws s3 ls s3://$BUCKET/$lastversion/`
     langs=""
-    for file in $AWS_FOLDERS; do
+    for file in $langsfiles; do
         if [[ "$file" == *.zip ]]; then
             file=${file/\.zip/}
             langs+="$file "
         fi
     done
+}
 
-    if [ -z "${langs}" ]; then
-        # Get language list from the installed ones (will not discover new translations).
-        echo "Fallback language list will only get current installation languages"
-        langs=`jq -r '.languages | keys[]' ../moodle.config.json`
-    fi
+# Get language list from the installed ones (will not discover new translations).
+function get_installed_languages {
+    langs=`jq -r '.languages | keys[]' ../moodle.config.json`
 }
 
 # Entry function to get a language file.
@@ -103,7 +93,7 @@ function get_language {
     lang=$1
     lang=${lang/-/_}
 
-    get_lang_version
+    get_last_version
 
     create_langfolder
 
@@ -111,7 +101,7 @@ function get_language {
 
     pushd $LANGPACKSFOLDER > /dev/null
 
-    curl -s $MOODLEORG_URL/$LANGVERSION/$lang.zip --output $lang.zip > /dev/null
+    curl -s $MOODLEORG_URL/$lastversion/$lang.zip --output $lang.zip > /dev/null
     size=$(du -k "$lang.zip" | cut -f 1)
     if [ ! -n $lang.zip ] || [ $size -le 1 ]; then
         echo "Wrong language name or corrupt file for $lang"
@@ -125,7 +115,7 @@ function get_language {
     unzip -o -u $lang.zip > /dev/null
 
     # This is the AWS version to get the language but right now it's slower.
-    # aws s3 cp s3://$BUCKET/$LANGVERSION/$lang.zip . > /dev/null
+    # aws s3 cp s3://$BUCKET/$lastversion/$lang.zip . > /dev/null
 
     rm $lang.zip
     popd > /dev/null
@@ -138,7 +128,7 @@ function get_languages {
         suffix=''
     fi
 
-    get_lang_version
+    get_last_version
 
     if [ -d $LANGPACKSFOLDER ]; then
         lastupdate=`date -r $LANGPACKSFOLDER +%s`
@@ -152,7 +142,14 @@ function get_languages {
         create_langfolder
     fi
 
-    get_language_folders
+
+    if [ $AWS_SERVICE -eq 1 ]; then
+        get_all_languages_aws
+        suffix=''
+    else
+        echo "Fallback language list will only get current installation languages"
+        get_installed_languages
+    fi
 
     for lang in $langs; do
         get_language "$lang"

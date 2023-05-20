@@ -21,26 +21,21 @@ import { CoreScreen } from '@services/screen';
 
 import { CoreSettingsIndexPage } from './pages/index';
 import { SHAREDFILES_PAGE_NAME } from '@features/sharedfiles/sharedfiles.module';
-import { CoreSettingsSynchronizationPage } from '@features/settings/pages/synchronization/synchronization';
-import { CoreSettingsGeneralPage } from '@features/settings/pages/general/general';
-import { CoreSettingsSpaceUsagePage } from '@features/settings/pages/space-usage/space-usage';
-import { CoreSettingsAboutPage } from '@features/settings/pages/about/about';
-import { CoreSettingsLicensesPage } from '@features/settings/pages/licenses/licenses';
-import { CoreSettingsDeviceInfoPage } from '@features/settings/pages/deviceinfo/deviceinfo';
-import { CoreSettingsDevPage } from '@features/settings/pages/dev/dev';
 
 const sectionRoutes: Routes = [
     {
         path: 'general',
-        component: CoreSettingsGeneralPage,
+        loadChildren: () => import('./pages/general/general.module').then(m => m.CoreSettingsGeneralPageModule),
     },
     {
         path: 'spaceusage',
-        component: CoreSettingsSpaceUsagePage,
+        loadChildren: () => import('./pages/space-usage/space-usage.module').then(m => m.CoreSettingsSpaceUsagePageModule),
     },
     {
         path: 'sync',
-        component: CoreSettingsSynchronizationPage,
+        loadChildren: () =>
+            import('./pages/synchronization/synchronization.module')
+                .then(m => m.CoreSettingsSynchronizationPageModule),
     },
     {
         path: SHAREDFILES_PAGE_NAME,
@@ -48,7 +43,7 @@ const sectionRoutes: Routes = [
     },
     {
         path: 'about',
-        component: CoreSettingsAboutPage,
+        loadChildren: () => import('./pages/about/about.module').then(m => m.CoreSettingsAboutPageModule),
     },
 ];
 
@@ -80,15 +75,11 @@ const routes: Routes = [
     ...conditionalRoutes(tabletRoutes, () => CoreScreen.isTablet),
     {
         path: 'about/deviceinfo',
-        component: CoreSettingsDeviceInfoPage,
-    },
-    {
-        path: 'about/deviceinfo/dev',
-        component: CoreSettingsDevPage,
+        loadChildren: () => import('./pages/deviceinfo/deviceinfo.module').then(m => m.CoreSettingsDeviceInfoPageModule),
     },
     {
         path: 'about/licenses',
-        component: CoreSettingsLicensesPage,
+        loadChildren: () => import('./pages/licenses/licenses.module').then(m => m.CoreSettingsLicensesPageModule),
     },
 ];
 
@@ -99,13 +90,6 @@ const routes: Routes = [
     ],
     declarations: [
         CoreSettingsIndexPage,
-        CoreSettingsSynchronizationPage,
-        CoreSettingsGeneralPage,
-        CoreSettingsSpaceUsagePage,
-        CoreSettingsAboutPage,
-        CoreSettingsLicensesPage,
-        CoreSettingsDeviceInfoPage,
-        CoreSettingsDevPage,
     ],
 })
 export class CoreSettingsLazyModule {}

@@ -76,7 +76,7 @@ export class CoreIframeUtilsProvider {
             this.addOfflineWarning(element, src, isSubframe);
 
             // If the network changes, check it again.
-            const subscription = CoreNetwork.onConnectShouldBeStable().subscribe(() => {
+            const subscription = CoreNetwork.onConnect().subscribe(() => {
                 // Execute the callback in the Angular zone, so change detection doesn't stop working.
                 NgZone.run(() => {
                     if (!this.checkOnlineFrameInOffline(element, isSubframe)) {
@@ -87,7 +87,7 @@ export class CoreIframeUtilsProvider {
             });
 
             return true;
-        } else if (element.classList.contains('core-iframe-offline-disabled') && element.parentElement) {
+        } else if (element.classList.contains('core-iframe-offline-disabled')) {
             // Reload the frame.
             if ('src' in element) {
                 // eslint-disable-next-line no-self-assign
@@ -98,7 +98,7 @@ export class CoreIframeUtilsProvider {
             }
 
             // Remove the warning and show the iframe
-            CoreDomUtils.removeElement(element.parentElement, 'div.core-iframe-offline-warning');
+            CoreDomUtils.removeElement(element.parentElement!, 'div.core-iframe-offline-warning');
             element.classList.remove('core-iframe-offline-disabled');
 
             if (isSubframe) {
@@ -207,13 +207,14 @@ export class CoreIframeUtilsProvider {
         const finalUrl = await currentSite.getAutoLoginUrl(url, false);
 
         // Resolve the promise once the iframe is loaded, or after a certain time.
+        let unblocked = false;
         const unblock = () => {
-            if (!this.waitAutoLoginDefer) {
-                // Not blocked.
+            if (unblocked) {
                 return;
             }
 
-            this.waitAutoLoginDefer.resolve();
+            unblocked = true;
+            this.waitAutoLoginDefer!.resolve();
             delete this.waitAutoLoginDefer;
         };
 
@@ -231,12 +232,6 @@ export class CoreIframeUtilsProvider {
      * @returns Window and Document.
      */
     getContentWindowAndDocument(element: CoreFrameElement): { window: Window | null; document: Document | null } {
-        const src = 'src' in element ? element.src : element.data;
-        if (!CoreUrlUtils.isLocalFileUrl(src)) {
-            // No permissions to access the iframe.
-            return { window: null, document: null };
-        }
-
         let contentWindow: Window | null = 'contentWindow' in element ? element.contentWindow : null;
         let contentDocument: Document | null = null;
 

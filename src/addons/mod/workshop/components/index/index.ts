@@ -14,7 +14,6 @@
 
 import { Component, Input, OnDestroy, OnInit, Optional } from '@angular/core';
 import { Params } from '@angular/router';
-import { CoreError } from '@classes/errors/error';
 import { CoreCourseModuleMainActivityComponent } from '@features/course/classes/main-activity-component';
 import { CoreCourseContentsPage } from '@features/course/pages/contents/contents';
 import { IonContent } from '@ionic/angular';
@@ -265,12 +264,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
      * @returns Resolved when done.
      */
     async gotoSubmissionsPage(page: number): Promise<void> {
-        if (!this.workshop) {
-            return;
-        }
-        const workshop = this.workshop;
-
-        const report = await AddonModWorkshop.getGradesReport(workshop.id, {
+        const report = await AddonModWorkshop.getGradesReport(this.workshop!.id, {
             groupId: this.group,
             page,
             cmId: this.module.id,
@@ -290,7 +284,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
         await Promise.all(grades.map(async (grade) => {
             const submission: AddonModWorkshopSubmissionDataWithOfflineData = {
                 id: grade.submissionid,
-                workshopid: workshop.id,
+                workshopid: this.workshop!.id,
                 example: false,
                 authorid: grade.userid,
                 timecreated: grade.submissionmodified,
@@ -309,7 +303,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
                 reviewerof: this.parseReviewer(grade.reviewerof),
             };
 
-            if (workshop.phase == AddonModWorkshopPhase.PHASE_ASSESSMENT) {
+            if (this.workshop!.phase == AddonModWorkshopPhase.PHASE_ASSESSMENT) {
                 submission.reviewedbydone = grade.reviewedby?.reduce((a, b) => a + (b.grade ? 1 : 0), 0) || 0;
                 submission.reviewerofdone = grade.reviewerof?.reduce((a, b) => a + (b.grade ? 1 : 0), 0) || 0;
                 submission.reviewedbycount = grade.reviewedby?.length || 0;
@@ -319,7 +313,7 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             const offlineData = await AddonModWorkshopHelper.applyOfflineData(submission, this.offlineSubmissions);
 
             if (offlineData !== undefined) {
-                this.grades.push(offlineData);
+                this.grades!.push(offlineData);
             }
         }));
     }
@@ -364,12 +358,8 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
      * Go to submit page.
      */
     gotoSubmit(): void {
-        if (!this.canSubmit || !this.access) {
-            return;
-        }
-
-        if ((this.access.creatingsubmissionallowed && !this.submission) ||
-            (this.access.modifyingsubmissionallowed && this.submission)) {
+        if (this.canSubmit && ((this.access!.creatingsubmissionallowed && !this.submission) ||
+                (this.access!.modifyingsubmissionallowed && this.submission))) {
             const params: Params = {
                 module: this.module,
                 access: this.access,
@@ -388,22 +378,20 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
      * View Phase info.
      */
     async viewPhaseInfo(): Promise<void> {
-        if (!this.phases || !this.workshop) {
-            return;
-        }
+        if (this.phases) {
+            const modalData = await CoreDomUtils.openModal<boolean>({
+                component: AddonModWorkshopPhaseInfoComponent,
+                componentProps: {
+                    phases: CoreUtils.objectToArray(this.phases),
+                    workshopPhase: this.workshop!.phase,
+                    externalUrl: this.module.url,
+                    showSubmit: this.showSubmit,
+                },
+            });
 
-        const modalData = await CoreDomUtils.openModal<boolean>({
-            component: AddonModWorkshopPhaseInfoComponent,
-            componentProps: {
-                phases: CoreUtils.objectToArray(this.phases),
-                workshopPhase: this.workshop.phase,
-                externalUrl: this.module.url,
-                showSubmit: this.showSubmit,
-            },
-        });
-
-        if (modalData === true) {
-            this.gotoSubmit();
+            if (modalData === true) {
+                this.gotoSubmit();
+            }
         }
     }
 
@@ -425,32 +413,26 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
      * @returns Promise resolved when done.
      */
     protected async setPhaseInfo(): Promise<void> {
-        if (!this.phases || !this.workshop || !this.access) {
-            return;
-        }
-
         this.submission = undefined;
         this.canAssess = false;
         this.assessments = [];
         this.userGrades = undefined;
         this.publishedSubmissions = [];
 
-        const workshop = this.workshop;
-
         this.canSubmit = AddonModWorkshopHelper.canSubmit(
-            this.workshop,
-            this.access,
-            this.phases[AddonModWorkshopPhase.PHASE_SUBMISSION].tasks,
+            this.workshop!,
+            this.access!,
+            this.phases![AddonModWorkshopPhase.PHASE_SUBMISSION].tasks,
         );
 
         this.showSubmit = this.canSubmit &&
-            ((this.access.creatingsubmissionallowed && !this.submission) ||
-                (this.access.modifyingsubmissionallowed && !!this.submission));
+            ((this.access!.creatingsubmissionallowed && !this.submission) ||
+                (this.access!.modifyingsubmissionallowed && !!this.submission));
 
         const promises: Promise<void>[] = [];
 
         if (this.canSubmit) {
-            promises.push(AddonModWorkshopHelper.getUserSubmission(this.workshop.id, { cmId: this.module.id })
+            promises.push(AddonModWorkshopHelper.getUserSubmission(this.workshop!.id, { cmId: this.module.id })
                 .then(async (submission) => {
                     this.submission = await AddonModWorkshopHelper.applyOfflineData(submission, this.offlineSubmissions);
 
@@ -458,27 +440,27 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
                 }));
         }
 
-        if (this.access.canviewallsubmissions && this.workshop.phase >= AddonModWorkshopPhase.PHASE_SUBMISSION) {
+        if (this.access!.canviewallsubmissions && this.workshop!.phase >= AddonModWorkshopPhase.PHASE_SUBMISSION) {
             promises.push(this.gotoSubmissionsPage(this.page));
         }
 
         let assessPromise = Promise.resolve();
 
-        if (this.workshop.phase >= AddonModWorkshopPhase.PHASE_ASSESSMENT) {
-            this.canAssess = AddonModWorkshopHelper.canAssess(this.workshop, this.access);
+        if (this.workshop!.phase >= AddonModWorkshopPhase.PHASE_ASSESSMENT) {
+            this.canAssess = AddonModWorkshopHelper.canAssess(this.workshop!, this.access!);
 
             if (this.canAssess) {
-                assessPromise = AddonModWorkshopHelper.getReviewerAssessments(this.workshop.id, {
+                assessPromise = AddonModWorkshopHelper.getReviewerAssessments(this.workshop!.id, {
                     cmId: this.module.id,
                 }).then(async (assessments) => {
                     await Promise.all(assessments.map(async (assessment) => {
-                        assessment.strategy = workshop.strategy;
+                        assessment.strategy = this.workshop!.strategy;
                         if (!this.hasOffline) {
                             return;
                         }
 
                         try {
-                            const offlineAssessment = await AddonModWorkshopOffline.getAssessment(workshop.id, assessment.id);
+                            const offlineAssessment = await AddonModWorkshopOffline.getAssessment(this.workshop!.id, assessment.id);
 
                             assessment.offline = true;
                             assessment.timemodified = Math.floor(offlineAssessment.timemodified / 1000);
@@ -495,23 +477,27 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
             }
         }
 
-        if (this.workshop.phase === AddonModWorkshopPhase.PHASE_CLOSED) {
-            promises.push(AddonModWorkshop.getGrades(this.workshop.id, { cmId: this.module.id }).then((grades) => {
+        if (this.workshop!.phase == AddonModWorkshopPhase.PHASE_CLOSED) {
+            promises.push(AddonModWorkshop.getGrades(this.workshop!.id, { cmId: this.module.id }).then((grades) => {
                 this.userGrades = grades.submissionlongstrgrade || grades.assessmentlongstrgrade ? grades : undefined;
 
                 return;
             }));
 
-            if (this.access.canviewpublishedsubmissions) {
+            if (this.access!.canviewpublishedsubmissions) {
                 promises.push(assessPromise.then(async () => {
                     const submissions: AddonModWorkshopSubmissionDataWithOfflineData[] =
-                        await AddonModWorkshop.getSubmissions(workshop.id, { cmId: this.module.id });
+                        await AddonModWorkshop.getSubmissions(this.workshop!.id, { cmId: this.module.id });
 
                     this.publishedSubmissions = submissions.filter((submission) => {
                         if (submission.published) {
-                            submission.reviewedby =
-                                this.assessments.filter((assessment) => assessment.submissionid === submission.id)
-                                    .map((assessment => AddonModWorkshopHelper.realGradeValue(workshop, assessment)));
+                            submission.reviewedby = [];
+
+                            this.assessments.forEach((assessment) => {
+                                if (assessment.submissionid == submission.id) {
+                                    submission.reviewedby!.push(AddonModWorkshopHelper.realGradeValue(this.workshop!, assessment));
+                                }
+                            });
 
                             return true;
                         }
@@ -528,14 +514,22 @@ export class AddonModWorkshopIndexComponent extends CoreCourseModuleMainActivity
     }
 
     /**
-     * @inheritdoc
+     * Performs the sync of the activity.
+     *
+     * @returns Promise resolved when done.
      */
     protected sync(): Promise<AddonModWorkshopSyncResult> {
-        if (!this.workshop) {
-            throw new CoreError('Cannot sync without a workshop.');
-        }
+        return AddonModWorkshopSync.syncWorkshop(this.workshop!.id);
+    }
 
-        return AddonModWorkshopSync.syncWorkshop(this.workshop.id);
+    /**
+     * Checks if sync has succeed from result sync data.
+     *
+     * @param result Data returned on the sync function.
+     * @returns If suceed or not.
+     */
+    protected hasSyncSucceed(result: AddonModWorkshopSyncResult): boolean {
+        return result.updated;
     }
 
     /**

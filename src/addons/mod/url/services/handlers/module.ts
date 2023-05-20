@@ -55,7 +55,7 @@ export class AddonModUrlModuleHandlerService extends CoreModuleHandlerBase imple
     /**
      * @inheritdoc
      */
-    async getData(module: CoreCourseModuleData): Promise<CoreCourseModuleHandlerData> {
+    getData(module: CoreCourseModuleData): CoreCourseModuleHandlerData {
 
         /**
          * Open the URL.
@@ -109,9 +109,11 @@ export class AddonModUrlModuleHandlerService extends CoreModuleHandlerBase imple
             }],
         };
 
-        const hideButton = await CoreUtils.ignoreErrors(this.hideLinkButton(module));
+        this.hideLinkButton(module).then((hideButton) => {
+            if (!handlerData.buttons) {
+                return;
+            }
 
-        if (handlerData.buttons && hideButton !== undefined) {
             handlerData.buttons[0].hidden = hideButton;
 
             if (module.contents && module.contents[0]) {
@@ -120,7 +122,11 @@ export class AddonModUrlModuleHandlerService extends CoreModuleHandlerBase imple
                 // Calculate the icon to use.
                 handlerData.icon = CoreCourse.getModuleIconSrc(module.modname, module.modicon, icon);
             }
-        }
+
+            return;
+        }).catch(() => {
+            // Ignore errors.
+        });
 
         return handlerData;
     }
@@ -185,15 +191,6 @@ export class AddonModUrlModuleHandlerService extends CoreModuleHandlerBase imple
      */
     manualCompletionAlwaysShown(module: CoreCourseModuleData): Promise<boolean> {
         return this.shouldOpenLink(module);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    iconIsShape(module?: CoreCourseModuleData | undefined, modicon?: string | undefined): boolean | undefined {
-        const iconUrl = module?.modicon ?? modicon;
-
-        return !iconUrl?.startsWith('assets/img/files/');
     }
 
 }

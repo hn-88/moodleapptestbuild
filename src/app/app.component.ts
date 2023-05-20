@@ -32,10 +32,7 @@ import { CoreSitePlugins } from '@features/siteplugins/services/siteplugins';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreDom } from '@singletons/dom';
 import { CorePlatform } from '@services/platform';
-import { CoreUrl } from '@singletons/url';
-import { CoreLogger } from '@singletons/logger';
 
-const MOODLE_SITE_URL_PREFIX = 'url-';
 const MOODLE_VERSION_PREFIX = 'version-';
 const MOODLEAPP_VERSION_PREFIX = 'moodleapp-';
 
@@ -47,15 +44,13 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     @ViewChild(IonRouterOutlet) outlet?: IonRouterOutlet;
 
-    protected logger = CoreLogger.getInstance('AppComponent');
-
     /**
      * @inheritdoc
      */
     ngOnInit(): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = <any> window;
-        CoreDomUtils.toggleModeClass('ionic5', true, { includeLegacy: true });
+        CoreDomUtils.toggleModeClass('ionic5', true);
         this.addVersionClass(MOODLEAPP_VERSION_PREFIX, CoreConstants.CONFIG.versionname.replace('-dev', ''));
 
         CoreEvents.on(CoreEvents.LOGOUT, async () => {
@@ -63,7 +58,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             CoreLang.clearCustomStrings();
 
             // Remove version classes from body.
-            this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
+            this.removeVersionClass(MOODLE_VERSION_PREFIX);
 
             // Go to sites page when user is logged out.
             await CoreNavigator.navigate('/login/sites', { reset: true });
@@ -118,42 +113,31 @@ export class AppComponent implements OnInit, AfterViewInit {
                 const info = site.getInfo();
                 if (info) {
                     // Add version classes to body.
-                    this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
-
+                    this.removeVersionClass(MOODLE_VERSION_PREFIX);
                     this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(info.release || ''));
-                    this.addSiteUrlClass(info.siteurl);
                 }
             }
 
             this.loadCustomStrings();
         });
 
-        // Site config is checked in login.
-        CoreEvents.on(CoreEvents.LOGIN_SITE_CHECKED, (data) => {
-            this.addSiteUrlClass(data.config.httpswwwroot);
-        });
-
-        CoreEvents.on(CoreEvents.SITE_UPDATED, async (data) => {
-            if (data.siteId === CoreSites.getCurrentSiteId()) {
+        CoreEvents.on(CoreEvents.SITE_UPDATED, (data) => {
+            if (data.siteId == CoreSites.getCurrentSiteId()) {
                 this.loadCustomStrings();
 
                 // Add version classes to body.
-                this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
-
+                this.removeVersionClass(MOODLE_VERSION_PREFIX);
                 this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(data.release || ''));
-                this.addSiteUrlClass(data.siteurl);
             }
         });
 
         CoreEvents.on(CoreEvents.SITE_ADDED, (data) => {
-            if (data.siteId === CoreSites.getCurrentSiteId()) {
+            if (data.siteId == CoreSites.getCurrentSiteId()) {
                 this.loadCustomStrings();
 
                 // Add version classes to body.
-                this.removeModeClasses([MOODLE_VERSION_PREFIX, MOODLE_SITE_URL_PREFIX]);
-
+                this.removeVersionClass(MOODLE_VERSION_PREFIX);
                 this.addVersionClass(MOODLE_VERSION_PREFIX, CoreSites.getReleaseNumber(data.release || ''));
-                this.addSiteUrlClass(data.siteurl);
             }
         });
 
@@ -199,14 +183,7 @@ export class AppComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        this.logger.debug('App component initialized');
-
-        CoreSubscriptions.once(this.outlet.activateEvents, async () => {
-            await CorePlatform.ready();
-
-            this.logger.debug('Hide splash screen');
-            SplashScreen.hide();
-        });
+        CoreSubscriptions.once(this.outlet.activateEvents, () => SplashScreen.hide());
     }
 
     /**
@@ -215,8 +192,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     protected async onPlatformReady(): Promise<void> {
         await CorePlatform.ready();
 
-        this.logger.debug('Platform is ready');
-
         // Refresh online status when changes.
         CoreNetwork.onChange().subscribe(() => {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
@@ -224,22 +199,22 @@ export class AppComponent implements OnInit, AfterViewInit {
                 const isOnline = CoreNetwork.isOnline();
                 const hadOfflineMessage = CoreDomUtils.hasModeClass('core-offline');
 
-                CoreDomUtils.toggleModeClass('core-offline', !isOnline, { includeLegacy: true });
+                CoreDomUtils.toggleModeClass('core-offline', !isOnline);
 
                 if (isOnline && hadOfflineMessage) {
-                    CoreDomUtils.toggleModeClass('core-online', true, { includeLegacy: true });
+                    CoreDomUtils.toggleModeClass('core-online', true);
 
                     setTimeout(() => {
-                        CoreDomUtils.toggleModeClass('core-online', false, { includeLegacy: true });
+                        CoreDomUtils.toggleModeClass('core-online', false);
                     }, 3000);
                 } else if (!isOnline) {
-                    CoreDomUtils.toggleModeClass('core-online', false, { includeLegacy: true });
+                    CoreDomUtils.toggleModeClass('core-online', false);
                 }
             });
         });
 
         const isOnline = CoreNetwork.isOnline();
-        CoreDomUtils.toggleModeClass('core-offline', !isOnline, { includeLegacy: true });
+        CoreDomUtils.toggleModeClass('core-offline', !isOnline);
 
         // Set StatusBar properties.
         CoreApp.setStatusBarColor();
@@ -257,7 +232,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
 
     /**
-     * Convenience function to add version to html classes.
+     * Convenience function to add version to body classes.
      *
      * @param prefix Prefix to add to the class.
      * @param release Current release number of the site.
@@ -268,65 +243,24 @@ export class AppComponent implements OnInit, AfterViewInit {
         parts[1] = parts[1] || '0';
         parts[2] = parts[2] || '0';
 
-        CoreDomUtils.toggleModeClass(prefix + parts[0], true, { includeLegacy: true });
-        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1], true, { includeLegacy: true });
-        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1] + '-' + parts[2], true, { includeLegacy: true });
+        CoreDomUtils.toggleModeClass(prefix + parts[0], true);
+        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1], true);
+        CoreDomUtils.toggleModeClass(prefix + parts[0] + '-' + parts[1] + '-' + parts[2], true);
     }
 
     /**
-     * Convenience function to remove all mode classes form body.
+     * Convenience function to remove all version classes form body.
      *
-     * @param prefixes Prefixes of the class mode to be removed.
+     * @param prefix Prefix of to the class.
      */
-    protected removeModeClasses(prefixes: string[]): void {
-        for (const modeClass of CoreDomUtils.getModeClasses()) {
-            if (!prefixes.some((prefix) => modeClass.startsWith(prefix))) {
+    protected removeVersionClass(prefix: string): void {
+        for (const versionClass of CoreDomUtils.getModeClasses()) {
+            if (!versionClass.startsWith(prefix)) {
                 continue;
             }
 
-            CoreDomUtils.toggleModeClass(modeClass, false, { includeLegacy: true });
+            CoreDomUtils.toggleModeClass(versionClass, false);
         }
-    }
-
-    /**
-     * Converts the provided URL into a CSS class that be used within the page.
-     * This is primarily used to add the siteurl to the body tag as a CSS class.
-     * Extracted from LMS url_to_class_name function.
-     *
-     * @param url Url.
-     * @returns Class name
-     */
-    protected urlToClassName(url: string): string {
-        const parsedUrl = CoreUrl.parse(url);
-
-        if (!parsedUrl) {
-            return '';
-        }
-
-        let className = parsedUrl.domain?.replace(/\./g, '-') || '';
-
-        if (parsedUrl.port) {
-            className += `--${parsedUrl.port}`;
-        }
-        if (parsedUrl.path) {
-            const leading = new RegExp('^/+');
-            const trailing = new RegExp('/+$');
-            const path = parsedUrl.path.replace(leading, '').replace(trailing, '');
-            if (path) {
-                className += '--' + path.replace(/\//g, '-') || '';
-            }
-        }
-
-        return className;
-    }
-
-    /**
-     * Convenience function to add site url to html classes.
-     */
-    protected addSiteUrlClass(siteUrl: string): void {
-        const className = this.urlToClassName(siteUrl);
-
-        CoreDomUtils.toggleModeClass(MOODLE_SITE_URL_PREFIX + className, true);
     }
 
 }

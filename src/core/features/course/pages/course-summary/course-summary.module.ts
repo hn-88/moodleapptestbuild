@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreSharedModule } from '@/core/shared.module';
 import { NgModule } from '@angular/core';
-import { CoreCourseSummaryPage } from '@features/course/pages/course-summary/course-summary.page';
+import { RouterModule, Routes } from '@angular/router';
+
+import { CoreSharedModule } from '@/core/shared.module';
+import { CoreCourseSummaryPage } from './course-summary';
 import { CoreRemindersComponentsModule } from '@features/reminders/components/components.module';
 
+const routes: Routes = [
+    {
+        path: '',
+        component: CoreCourseSummaryPage,
+    },
+];
 @NgModule({
     imports: [
         CoreSharedModule,
@@ -26,4 +34,15 @@ import { CoreRemindersComponentsModule } from '@features/reminders/components/co
         CoreCourseSummaryPage,
     ],
 })
-export class CoreCourseSummaryPageModule {}
+export class CoreCoursePreviewPageComponentModule { }
+
+@NgModule({
+    imports: [
+        RouterModule.forChild(routes),
+        CoreSharedModule,
+        CoreCoursePreviewPageComponentModule,
+        CoreRemindersComponentsModule,
+    ],
+    exports: [RouterModule],
+})
+export class CoreCourseSummaryPageModule { }

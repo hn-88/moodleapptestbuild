@@ -363,7 +363,7 @@ export class CoreH5PFileStorage {
      * @returns The path to the dependency library
      */
     getDependencyPath(dependency: CoreH5PContentDependencyData): string {
-        return 'libraries/' + CoreH5PCore.libraryToFolderName(dependency);
+        return 'libraries/' + dependency.machineName + '-' + dependency.majorVersion + '.' + dependency.minorVersion;
     }
 
     /**
@@ -400,7 +400,7 @@ export class CoreH5PFileStorage {
         folderName?: string,
     ): string {
         if (!folderName) {
-            folderName = CoreH5PCore.libraryToFolderName(libraryData);
+            folderName = CoreH5PCore.libraryToString(libraryData, true);
         }
 
         return CorePath.concatenatePaths(this.getLibrariesFolderPath(siteId), folderName);

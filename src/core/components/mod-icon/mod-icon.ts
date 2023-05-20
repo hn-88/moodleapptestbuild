@@ -31,15 +31,13 @@ const fallbackModName = 'external-tool';
 })
 export class CoreModIconComponent implements OnInit, OnChanges {
 
-    @Input() modname = ''; // The module name. Used also as component if set.
-    @Input() fallbackTranslation = ''; // Fallback translation string if cannot auto translate.
+    @Input() modname?: string; // The module name. Used also as component if set.
     @Input() componentId?: number; // Component Id for external icons.
     @Input() modicon?: string; // Module icon url or local url.
     @Input() showAlt = true; // Show alt otherwise it's only presentation icon.
     @Input() purpose: ModPurpose = ModPurpose.MOD_PURPOSE_OTHER; // Purpose of the module.
 
     icon = '';
-    noFilter = false;
     modNameTranslated = '';
     isLocalUrl = true;
     linkIconWithComponent = false;
@@ -62,7 +60,7 @@ export class CoreModIconComponent implements OnInit, OnChanges {
             }
         }
 
-        this.modNameTranslated = CoreCourse.translateModuleName(this.modname, this.fallbackTranslation);
+        this.modNameTranslated = this.modname ? CoreCourse.translateModuleName(this.modname) || '' : '';
         if (CoreSites.getCurrentSite()?.isVersionGreaterEqualThan('4.0')) {
             this.legacyIcon = false;
 
@@ -79,22 +77,22 @@ export class CoreModIconComponent implements OnInit, OnChanges {
             }
         }
 
-        await this.setIcon();
+        this.setIcon();
     }
 
     /**
      * @inheritdoc
      */
-    async ngOnChanges(changes: { [name: string]: SimpleChange }): Promise<void> {
+    ngOnChanges(changes: { [name: string]: SimpleChange }): void {
         if (changes && changes.modicon && changes.modicon.previousValue !== undefined) {
-            await this.setIcon();
+            this.setIcon();
         }
     }
 
     /**
      * Set icon.
      */
-    async setIcon(): Promise<void> {
+    setIcon(): void {
         this.icon = this.modicon || this.icon;
         this.isLocalUrl = this.icon.startsWith(assetsPath);
 
@@ -106,9 +104,6 @@ export class CoreModIconComponent implements OnInit, OnChanges {
             !!this.componentId &&
             !this.isLocalUrl &&
             !this.icon.match('/theme/image.php/[^/]+/' + this.modname + '/[-0-9]*/');
-
-        const iconIsShape = await CoreCourseModuleDelegate.moduleIconIsShape(this.modname, this.icon);
-        this.noFilter = iconIsShape === false;
     }
 
     /**
@@ -127,7 +122,6 @@ export class CoreModIconComponent implements OnInit, OnChanges {
         }
 
         this.icon = path + moduleName + '.svg';
-        this.noFilter = false;
     }
 
 }

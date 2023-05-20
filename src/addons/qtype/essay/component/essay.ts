@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ElementRef } from '@angular/core';
+import { Component, OnInit, ElementRef } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { FileEntry } from '@ionic-native/file/ngx';
 
@@ -30,11 +30,12 @@ import { CoreFileEntry } from '@services/file-helper';
     selector: 'addon-qtype-essay',
     templateUrl: 'addon-qtype-essay.html',
 })
-export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonModQuizEssayQuestion> {
+export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent implements OnInit {
 
     formControl?: FormControl;
     attachments?: CoreFileEntry[];
     uploadFilesSupported = false;
+    essayQuestion?: AddonModQuizEssayQuestion;
 
     constructor(elementRef: ElementRef, protected fb: FormBuilder) {
         super('AddonQtypeEssayComponent', elementRef);
@@ -43,18 +44,14 @@ export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonMod
     /**
      * @inheritdoc
      */
-    init(): void {
-        if (!this.question) {
-            return;
-        }
-
-        this.uploadFilesSupported = this.question.responsefileareas !== undefined;
-
+    ngOnInit(): void {
+        this.uploadFilesSupported = this.question?.responsefileareas !== undefined;
         this.initEssayComponent(this.review);
+        this.essayQuestion = this.question;
 
-        this.formControl = this.fb.control(this.question?.textarea?.text);
+        this.formControl = this.fb.control(this.essayQuestion?.textarea?.text);
 
-        if (this.question?.allowsAttachments && this.uploadFilesSupported && !this.review) {
+        if (this.essayQuestion?.allowsAttachments && this.uploadFilesSupported && !this.review) {
             this.loadAttachments();
         }
     }
@@ -65,14 +62,10 @@ export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonMod
      * @returns Promise resolved when done.
      */
     async loadAttachments(): Promise<void> {
-        if (!this.question) {
-            return;
-        }
-
-        if (this.offlineEnabled && this.question.localAnswers?.attachments_offline) {
+        if (this.offlineEnabled && this.essayQuestion?.localAnswers?.attachments_offline) {
 
             const attachmentsData: CoreFileUploaderStoreFilesResult = CoreTextUtils.parseJSON(
-                this.question.localAnswers.attachments_offline,
+                this.essayQuestion.localAnswers.attachments_offline,
                 {
                     online: [],
                     offline: 0,
@@ -82,7 +75,7 @@ export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonMod
 
             if (attachmentsData.offline) {
                 offlineFiles = <FileEntry[]> await CoreQuestionHelper.getStoredQuestionFiles(
-                    this.question,
+                    this.essayQuestion,
                     this.component || '',
                     this.componentId || -1,
                 );
@@ -90,12 +83,12 @@ export class AddonQtypeEssayComponent extends CoreQuestionBaseComponent<AddonMod
 
             this.attachments = [...attachmentsData.online, ...offlineFiles];
         } else {
-            this.attachments = Array.from(CoreQuestionHelper.getResponseFileAreaFiles(this.question, 'attachments'));
+            this.attachments = Array.from(CoreQuestionHelper.getResponseFileAreaFiles(this.question!, 'attachments'));
         }
 
         CoreFileSession.setFiles(
             this.component || '',
-            CoreQuestion.getQuestionComponentId(this.question, this.componentId || -1),
+            CoreQuestion.getQuestionComponentId(this.question!, this.componentId || -1),
             this.attachments,
         );
     }

@@ -16,12 +16,12 @@ import { CoreFile } from '@services/file';
 import { CoreSites } from '@services/sites';
 import { CoreUrlUtils } from '@services/utils/url';
 import { CoreUtils } from '@services/utils/utils';
+import { CoreXAPI } from '@features/xapi/services/xapi';
 import { CoreH5P } from '../services/h5p';
 import { CoreH5PCore, CoreH5PDisplayOptions, CoreH5PContentData, CoreH5PDependenciesFiles } from './core';
 import { CoreH5PCoreSettings, CoreH5PHelper } from './helper';
 import { CoreH5PStorage } from './storage';
 import { CorePath } from '@singletons/path';
-import { CoreXAPIIRI } from '@features/xapi/classes/iri';
 
 /**
  * Equivalent to Moodle's H5P player class.
@@ -98,7 +98,7 @@ export class CoreH5PPlayer {
             metadata: content.metadata,
             contentUserData: [
                 {
-                    state: '{}', // state will be overridden in params.js to use the latest state when the package is played.
+                    state: '{}',
                 },
             ],
         };
@@ -166,16 +166,16 @@ export class CoreH5PPlayer {
      * @returns Promise resolved when done.
      */
     async deleteAllContentIndexesForSite(siteId?: string): Promise<void> {
-        const siteIdentifier = siteId || CoreSites.getCurrentSiteId();
+        siteId = siteId || CoreSites.getCurrentSiteId();
 
-        if (!siteIdentifier) {
+        if (!siteId) {
             return;
         }
 
-        const records = await this.h5pCore.h5pFramework.getAllContentData(siteIdentifier);
+        const records = await this.h5pCore.h5pFramework.getAllContentData(siteId);
 
         await Promise.all(records.map(async (record) => {
-            await CoreUtils.ignoreErrors(this.h5pCore.h5pFS.deleteContentIndex(record.foldername, siteIdentifier));
+            await CoreUtils.ignoreErrors(this.h5pCore.h5pFS.deleteContentIndex(record.foldername, siteId!));
         }));
     }
 
@@ -272,7 +272,6 @@ export class CoreH5PPlayer {
         component?: string,
         contextId?: number,
         siteId?: string,
-        otherOptions: CoreH5PGetContentUrlOptions = {},
     ): Promise<string> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
@@ -283,19 +282,13 @@ export class CoreH5PPlayer {
 
         displayOptions = this.h5pCore.fixDisplayOptions(displayOptions || {}, data.id);
 
-        const params: Record<string, string | number> = {
+        const params: Record<string, string> = {
             displayOptions: JSON.stringify(displayOptions),
             component: component || '',
         };
 
         if (contextId) {
-            params.trackingUrl = await CoreXAPIIRI.generate(contextId, 'activity', siteId);
-        }
-        if (otherOptions.saveFreq !== undefined) {
-            params.saveFreq = otherOptions.saveFreq;
-        }
-        if (otherOptions.state !== undefined) {
-            params.state = otherOptions.state;
+            params.trackingUrl = await CoreXAPI.getUrl(contextId, 'activity', siteId);
         }
 
         return CoreUrlUtils.addParamsToUrl(path, params);
@@ -426,9 +419,4 @@ type AssetsSettings = CoreH5PCoreSettings & {
     moodleLibraryPaths: {
         [libString: string]: string;
     };
-};
-
-export type CoreH5PGetContentUrlOptions = {
-    saveFreq?: number; // State save frequency (if enabled).
-    state?: string; // Current state.
 };

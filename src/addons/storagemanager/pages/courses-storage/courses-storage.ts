@@ -261,8 +261,7 @@ export class AddonStorageManagerCoursesStoragePage implements OnInit, OnDestroy 
         event.stopPropagation();
 
         try {
-            const site = CoreSites.getRequiredCurrentSite();
-            const siteName = await site.getSiteName();
+            const siteName = CoreSites.getRequiredCurrentSite().getSiteName();
 
             this.spaceUsage = await CoreSettingsHelper.deleteSiteStorage(siteName, this.siteId);
         } catch {

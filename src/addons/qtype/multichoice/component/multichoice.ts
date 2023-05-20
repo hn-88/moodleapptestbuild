@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component, ElementRef } from '@angular/core';
+import { Component, OnInit, ElementRef } from '@angular/core';
 
 import { AddonModQuizMultichoiceQuestion, CoreQuestionBaseComponent } from '@features/question/classes/base-question-component';
 
@@ -24,7 +24,9 @@ import { AddonModQuizMultichoiceQuestion, CoreQuestionBaseComponent } from '@fea
     templateUrl: 'addon-qtype-multichoice.html',
     styleUrls: ['multichoice.scss'],
 })
-export class AddonQtypeMultichoiceComponent extends CoreQuestionBaseComponent<AddonModQuizMultichoiceQuestion> {
+export class AddonQtypeMultichoiceComponent extends CoreQuestionBaseComponent implements OnInit {
+
+    multiQuestion?: AddonModQuizMultichoiceQuestion;
 
     constructor(elementRef: ElementRef) {
         super('AddonQtypeMultichoiceComponent', elementRef);
@@ -33,19 +35,16 @@ export class AddonQtypeMultichoiceComponent extends CoreQuestionBaseComponent<Ad
     /**
      * @inheritdoc
      */
-    init(): void {
+    ngOnInit(): void {
         this.initMultichoiceComponent();
+        this.multiQuestion = this.question;
     }
 
     /**
      * Clear selected choices.
      */
     clear(): void {
-        if (!this.question) {
-            return;
-        }
-
-        this.question.singleChoiceModel = undefined;
+        this.multiQuestion!.singleChoiceModel = undefined;
     }
 
 }

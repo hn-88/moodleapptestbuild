@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    ChangeDetectionStrategy,
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CoreGroupInfo } from '@services/groups';
 
 /**
@@ -34,7 +28,6 @@ export class CoreGroupSelectorComponent {
     @Input() groupInfo?: CoreGroupInfo;
     @Input() multipleGroupsMessage?: string;
     @Input() selected!: number;
-    @Input() courseId?: number;
     @Output() selectedChange = new EventEmitter<number>();
 
 }

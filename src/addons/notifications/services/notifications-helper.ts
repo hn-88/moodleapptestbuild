@@ -28,7 +28,7 @@ import {
     AddonNotificationsProvider,
 } from './notifications';
 import { CoreEvents } from '@singletons/events';
-import { AddonNotificationsPushNotification } from './handlers/push-click';
+import { AddonNotificationsNotificationData } from './handlers/push-click';
 import { CoreTimeUtils } from '@services/utils/time';
 
 /**
@@ -42,12 +42,23 @@ export class AddonNotificationsHelperProvider {
      *
      * @param notification The notification object.
      * @returns The notification formatted to render.
-     * @deprecated since 4.2. This function isn't needed anymore.
      */
     formatNotificationText(
         notification: AddonNotificationsNotificationMessageFormatted,
-    ): AddonNotificationsNotificationMessageFormatted {
-        return notification;
+    ): AddonNotificationsNotificationToRender {
+        const formattedNotification: AddonNotificationsNotificationToRender = notification;
+
+        if (notification.moodlecomponent?.startsWith('mod_') && notification.iconurl) {
+            const modname = notification.moodlecomponent.substring(4);
+            if (notification.iconurl.match('/theme/image.php/[^/]+/' + modname + '/[-0-9]*/') ||
+                    notification.iconurl.match('/theme/image.php/[^/]+/' + notification.moodlecomponent + '/[-0-9]*/')) {
+                formattedNotification.modname = modname;
+            }
+        } else {
+            formattedNotification.iconurl = formattedNotification.iconurl || undefined; // Make sure the property exists.
+        }
+
+        return formattedNotification;
     }
 
     /**
@@ -117,7 +128,7 @@ export class AddonNotificationsHelperProvider {
      * @returns Promise resolved when done.
      */
     async markNotificationAsRead(
-        notification: AddonNotificationsNotificationMessageFormatted | AddonNotificationsPushNotification,
+        notification: AddonNotificationsNotificationMessageFormatted | AddonNotificationsNotificationData,
         siteId?: string,
     ): Promise<boolean> {
         if ('read' in notification && (notification.read || notification.timeread > 0)) {
@@ -185,4 +196,12 @@ type AddonNotificationsPreferencesNotificationProcessorFormatted = AddonNotifica
  */
 export type AddonNotificationsPreferencesProcessorFormatted = AddonNotificationsPreferencesProcessor & {
     supported?: boolean; // Calculated in the app. Whether the processor is supported in the app.
+};
+
+/**
+ * Notification with some calculated data to render it.
+ */
+export type AddonNotificationsNotificationToRender = AddonNotificationsNotificationMessageFormatted & {
+    iconurl?: string;
+    modname?: string;
 };

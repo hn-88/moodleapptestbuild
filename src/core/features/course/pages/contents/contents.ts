@@ -152,7 +152,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
             this.showLoadingAndRefresh(false, false);
 
             if (data.warnings && data.warnings[0]) {
-                CoreDomUtils.showAlert(undefined, data.warnings[0].message);
+                CoreDomUtils.showErrorModal(data.warnings[0]);
             }
         });
     }
@@ -183,7 +183,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
                 this.course.displayname || this.course.fullname,
             ));
             if (result?.warnings?.length) {
-                CoreDomUtils.showAlert(undefined, result.warnings[0].message);
+                CoreDomUtils.showErrorModal(result.warnings[0]);
             }
         }
 

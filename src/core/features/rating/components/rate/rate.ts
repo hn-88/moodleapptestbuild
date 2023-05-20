@@ -69,7 +69,7 @@ export class CoreRatingRateComponent implements OnChanges, OnDestroy {
     }
 
     /**
-     * @inheritdoc
+     * Detect changes on input properties.
      */
     async ngOnChanges(): Promise<void> {
         this.item = (this.ratingInfo.ratings || []).find((rating) => rating.itemid == this.itemId);
@@ -125,10 +125,6 @@ export class CoreRatingRateComponent implements OnChanges, OnDestroy {
      * Send or save the user rating when changed.
      */
     async userRatingChanged(): Promise<void> {
-        if (this.rating === undefined) {
-            return;
-        }
-
         const modal = await CoreDomUtils.showModalLoading('core.sending', true);
 
         try {
@@ -141,7 +137,7 @@ export class CoreRatingRateComponent implements OnChanges, OnDestroy {
                 this.itemSetId,
                 this.courseId,
                 this.scaleId,
-                this.rating,
+                this.rating!,
                 this.userId,
                 this.aggregateMethod,
             );

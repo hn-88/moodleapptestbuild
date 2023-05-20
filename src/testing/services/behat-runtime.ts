@@ -362,40 +362,6 @@ export class TestingBehatRuntimeService {
     }
 
     /**
-     * Get a file input id, adding it if necessary.
-     *
-     * @param locator Input locator.
-     * @returns Input id if successful, or ERROR: followed by message
-     */
-    async getFileInputId(locator: TestingBehatElementLocator): Promise<string> {
-        this.log('Action - Upload File', { locator });
-
-        try {
-            const inputOrContainer = TestingBehatDomUtils.findElementBasedOnText(locator);
-
-            if (!inputOrContainer) {
-                return 'ERROR: No element matches input locator.';
-            }
-
-            const input = inputOrContainer.matches('input[type="file"]')
-                ? inputOrContainer
-                : inputOrContainer.querySelector('input[type="file"]');
-
-            if (!input) {
-                return 'ERROR: Input element does not contain a file input.';
-            }
-
-            if (!input.hasAttribute('id')) {
-                input.setAttribute('id', `file-${Date.now()}`);
-            }
-
-            return input.getAttribute('id') ?? '';
-        } catch (error) {
-            return 'ERROR: ' + error.message;
-        }
-    }
-
-    /**
      * Trigger a pull to refresh gesture in the current page.
      *
      * @returns OK if successful, or ERROR: followed by message
@@ -456,22 +422,13 @@ export class TestingBehatRuntimeService {
     async setField(field: string, value: string): Promise<string> {
         this.log('Action - Set field ' + field + ' to: ' + value);
 
-        const input = TestingBehatDomUtils.findField(field);
+        const found = this.findField(field);
 
-        if (!input) {
+        if (!found) {
             return 'ERROR: No element matches field to set.';
         }
 
-        if (input instanceof HTMLSelectElement) {
-            const options = Array.from(input.querySelectorAll('option'));
-
-            value = options.find(option => option.value === value)?.value
-                ?? options.find(option => option.text === value)?.value
-                ?? options.find(option => option.text.includes(value))?.value
-                ?? value;
-        }
-
-        await TestingBehatDomUtils.setElementValue(input, value);
+        await TestingBehatDomUtils.setElementValue(found, value);
 
         return 'OK';
     }
@@ -488,7 +445,7 @@ export class TestingBehatRuntimeService {
     async fieldMatches(field: string, value: string): Promise<string> {
         this.log('Action - Field ' + field + ' matches value: ' + value);
 
-        const found = TestingBehatDomUtils.findField(field);
+        const found = this.findField(field);
 
         if (!found) {
             return 'ERROR: No element matches field to set.';
@@ -500,6 +457,19 @@ export class TestingBehatRuntimeService {
         }
 
         return 'OK';
+    }
+
+    /**
+     * Find a field.
+     *
+     * @param field Field name.
+     * @returns Field element.
+     */
+    protected findField(field: string): HTMLElement | HTMLInputElement | undefined {
+        return TestingBehatDomUtils.findElementBasedOnText(
+            { text: field, selector: 'input, textarea, [contenteditable="true"], ion-select, ion-datetime' },
+            { onlyClickable: false, containerName: '' },
+        );
     }
 
     /**
@@ -669,8 +639,8 @@ export type BehatTestsWindow = Window & {
 };
 
 export type TestingBehatFindOptions = {
-    containerName?: string;
-    onlyClickable?: boolean;
+    containerName: string;
+    onlyClickable: boolean;
 };
 
 export type TestingBehatElementLocator = {

@@ -33,18 +33,14 @@ script:
   - npm install
   - npm run build:prod
   - echo "Completed npm run build:prod."
-  -      echo "Installing cordova etc..."
-  -      npm install cordova cordova-res
-  -      #sudo npm install -g cordova
-  -      #sudo npm install -g cordova-res
-  -      npm install 
-  -      npx ionic cordova platform add android@11.0.0
-  -      #npx ionic cordova-res android --skip-config --copy
-  -      #cp -Rvf android platforms/android 
-  -      npx cordova platform remove ios
-  -      npx cordova prepare
-  -      npx gulp
-  -      npx ionic cordova build android --prod
+  - echo "Installing cordova etc..."
+  - npm install cordova cordova-res
+  - npm install 
+  - npx ionic cordova platform add android@11.0.0 
+  - npx cordova platform remove ios
+  - npx cordova prepare
+  - npx gulp
+  - npx ionic cordova build android --prod
 
 jobs:
   include:

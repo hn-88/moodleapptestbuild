@@ -46,7 +46,6 @@ jobs:
   include:
   - stage: build
     name: "Build Android"
-    if: env(DEPLOY) = 1 OR (env(DEPLOY) = 2 AND tag IS NOT blank)
     language: android
     android:
       components:

@@ -34,3 +34,8 @@ jobs:
         npx gulp
         npx ionic cordova build android --prod
         #cordova build android
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifact-of-build
+        path: /home/runner/work/moodleapptestbuild/moodleapptestbuild/platforms/android/app/build/outputs/apk/debug/app-debug.apk

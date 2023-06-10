@@ -31,21 +31,21 @@ Feature: Test basic usage of login in app
     And I press "Connect to your site" in the app
     Then I should find "Acceptance test site" in the app
     And I replace "/.*/" within ".core-siteurl" with "https://campus.example.edu"
-    # And the UI should match the snapshot
+    And the UI should match the snapshot
 
     When I set the following fields to these values in the app:
       | Username | student1 |
       | Password | student1 |
     And I press "Log in" near "Forgotten your username or password?" in the app
     Then I should find "Acceptance test site" in the app
-    # And the UI should match the snapshot
+    And the UI should match the snapshot
     But I should not find "Log in" in the app
 
   Scenario: Add a non existing account
     When I launch the app
     And I set the field "Your site" to "wrongsiteaddress" in the app
     And I press "Connect to your site" in the app
-    Then I should find "Site not found" in the app
+    Then I should find "Can't connect to site" in the app
 
   Scenario: Add a non existing account from accounts switcher
     When I enter the app
@@ -56,7 +56,7 @@ Feature: Test basic usage of login in app
     And I wait the app to restart
     And I set the field "Your site" to "wrongsiteaddress" in the app
     And I press "Connect to your site" in the app
-    Then I should find "Site not found" in the app
+    Then I should find "Can't connect to site" in the app
 
   Scenario: Log out from the app
     Given I entered the app as "student1"

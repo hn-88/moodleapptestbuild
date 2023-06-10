@@ -5,7 +5,8 @@ Feature: Test basic usage of BBB activity in app
   I need basic BBB functionality to work
 
   Background:
-    Given I enable "bigbluebuttonbn" "mod" plugin
+    Given the Moodle site is compatible with this feature
+    And I enable "bigbluebuttonbn" "mod" plugin
     And the following "users" exist:
       | username | firstname | lastname | email                |
       | teacher1 | Teacher   | teacher  | teacher1@example.com |
@@ -52,8 +53,8 @@ Feature: Test basic usage of BBB activity in app
 
     Given I wait "10" seconds
     Then I should find "The session is in progress." in the app
-    And I should find "1" near "viewer" in the app
-    And I should find "0" near "moderator" in the app
+    And I should find "1" near "Viewer" in the app
+    And I should find "0" near "Moderator" in the app
 
   Scenario: Join meeting (moderator)
     Given the following "activities" exist:
@@ -68,8 +69,8 @@ Feature: Test basic usage of BBB activity in app
 
     Given I wait "10" seconds
     Then I should find "The session is in progress." in the app
-    And I should find "1" near "moderator" in the app
-    And I should find "0" near "viewer" in the app
+    And I should find "1" near "Moderator" in the app
+    And I should find "0" near "Viewer" in the app
 
   Scenario: Wait for moderator
     Given the following "activities" exist:
@@ -90,8 +91,8 @@ Feature: Test basic usage of BBB activity in app
     And I press "Close" in the app
     And I pull to refresh in the app
     Then I should find "The session is in progress." in the app
-    And I should find "1" near "moderator" in the app
-    And I should find "0" near "viewer" in the app
+    And I should find "1" near "Moderator" in the app
+    And I should find "0" near "Viewer" in the app
     And I should be able to press "Join session" in the app
 
     When I close all opened windows
@@ -142,15 +143,15 @@ Feature: Test basic usage of BBB activity in app
       | BBB             | Recording 1 | Description 1 | 3      |
       | BBB             | Recording 2 | Description 2 | 3      |
     And I entered the bigbluebuttonbn activity "BBB" on course "Course 1" as "student1" in the app
-    Then I should find "Presentation" in the app
-    And I should find "Recording 1" in the app
+    Then I should find "Recording 1" in the app
     And I should find "Recording 2" in the app
     But I should not find "Description 1" in the app
     And I should not find "Description 2" in the app
+    And I should not find "Presentation" in the app
 
     When I press "Recording 1" in the app
     Then I should find "Description 1" in the app
-    And I should find "Presentation" within "Playback" "ion-item" in the app
+    And I should find "Presentation" in the app
     And I should find "Recording 1" within "Name" "ion-item" in the app
     And I should find "Date" in the app
     And I should find "3600" within "Duration" "ion-item" in the app
@@ -161,12 +162,12 @@ Feature: Test basic usage of BBB activity in app
 
     When I press "Recording 2" in the app
     Then I should find "Description 2" in the app
-    And I should find "Presentation" within "Playback" "ion-item" in the app
+    And I should find "Presentation" in the app
     And I should find "Recording 2" within "Name" "ion-item" in the app
     But I should not find "Description 1" in the app
 
     # Test play button, but the mock server doesn't support viewing recordings.
-    When I press "Play" near "Recording 1" in the app
+    When I press "Presentation" in the app
     And I press "OK" in the app
     And I switch to the browser tab opened by the app
     And I log in as "student1"

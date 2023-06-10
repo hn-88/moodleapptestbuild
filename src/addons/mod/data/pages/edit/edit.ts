@@ -438,7 +438,33 @@ export class AddonModDataEditPage implements OnInit {
             replaceRegEx = new RegExp(replace, 'gi');
 
             template = template.replace(replaceRegEx, 'field_' + field.id);
+
+            // Replace the field name tag.
+            replace = '[[' + field.name + '#name]]';
+            replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
+            replaceRegEx = new RegExp(replace, 'gi');
+
+            template = template.replace(replaceRegEx, field.name);
+
+            // Replace the field description tag.
+            replace = '[[' + field.name + '#description]]';
+            replace = replace.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&');
+            replaceRegEx = new RegExp(replace, 'gi');
+
+            template = template.replace(replaceRegEx, field.description);
         });
+
+        const regex = new RegExp('##otherfields##', 'gi');
+
+        if (template.match(regex)) {
+            const unusedFields = this.fieldsArray.filter(field => !template.includes(`[field]="fields[${field.id}]`)).map((field) =>
+                `<p><strong>${field.name}</strong></p>` +
+                '<p><addon-mod-data-field-plugin [class.has-errors]="!!errors[' + field.id + ']" mode="edit" \
+                [field]="fields[' + field.id + ']" [value]="contents[' + field.id + ']" [form]="form" [database]="database" \
+                [error]="errors[' + field.id + ']" (onFieldInit)="onFieldInit($event)"></addon-mod-data-field-plugin><p>');
+
+            template = template.replace(regex, unusedFields.join(''));
+        }
 
         // Editing tags is not supported.
         const replaceRegEx = new RegExp('##tags##', 'gi');

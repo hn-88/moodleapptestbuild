@@ -10,7 +10,7 @@
 
         <ion-buttons slot="end">
             <ion-button fill="clear" (click)="showHelp()" [attr.aria-label]="'core.help' | translate">
-                <ion-icon slot="icon-only" name="far-question-circle" aria-hidden="true"></ion-icon>
+                <ion-icon slot="icon-only" name="far-circle-question" aria-hidden="true"></ion-icon>
             </ion-button>
         </ion-buttons>
     </ion-toolbar>
@@ -18,12 +18,12 @@
 <ion-content class="ion-padding" (keydown)="keyDown($event)" (keyup)="keyUp($event)">
     <core-loading [hideUntil]="!showLoading">
         <div class="list-item-limited-width">
-            <div class="ion-text-wrap ion-text-center ion-margin-bottom" [ngClass]="{'item-avatar-center': showSiteAvatar}">
+            <div class="ion-text-wrap ion-text-center ion-margin-bottom" [ngClass]="{'item-avatar-center': showUserAvatar}">
                 <!-- Show user avatar. -->
-                <img *ngIf="showSiteAvatar" [src]="userAvatar" class="large-avatar" core-external-content [siteId]="siteId"
+                <img *ngIf="showUserAvatar" [src]="userAvatar" class="large-avatar" core-external-content [siteId]="siteId"
                     alt="{{ 'core.pictureof' | translate:{$a: userFullName} }}" onError="this.src='assets/img/user-avatar.png'">
 
-                <div class="core-login-site-logo" *ngIf="!showSiteAvatar">
+                <div class="core-login-site-logo" *ngIf="!showUserAvatar">
                     <!-- Show site logo or a default image. -->
                     <img *ngIf="logoUrl" [src]="logoUrl" role="presentation" onError="this.src='assets/img/login_logo.png'" alt="">
                     <img *ngIf="!logoUrl" src="assets/img/login_logo.png" role="presentation" alt="">
@@ -36,7 +36,7 @@
 
                 <ion-card *ngIf="!isLoggedOut" class="core-danger-card core-login-reconnect-warning">
                     <ion-item>
-                        <ion-icon name="fas-exclamation-circle" slot="start" aria-hidden="true"></ion-icon>
+                        <ion-icon name="fas-circle-exclamation" slot="start" aria-hidden="true"></ion-icon>
                         <ion-label>
                             <p>{{ 'core.lostconnection' | translate }}</p>
                         </ion-label>
@@ -110,7 +110,7 @@
                 <ion-button [fill]="'outline'" *ngFor="let provider of identityProviders"
                     class="ion-text-wrap ion-margin core-oauth-provider" (click)="oauthClicked(provider)" [attr.aria-label]="provider.name"
                     expand="block">
-                    <img [src]="provider.iconurl" alt="" width="32" height="32" slot="start">
+                    <img *ngIf="provider.iconurl" [src]="provider.iconurl" alt="" width="32" height="32" slot="start" aria-hidden="true">
                     <ion-label>{{ provider.name }}</ion-label>
                 </ion-button>
             </ion-list>

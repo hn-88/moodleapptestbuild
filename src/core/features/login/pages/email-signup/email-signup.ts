@@ -20,7 +20,6 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreCountry, CoreUtils } from '@services/utils/utils';
 import { CoreWS, CoreWSExternalWarning } from '@services/ws';
-import { CoreConstants } from '@/core/constants';
 import { Translate } from '@singletons';
 import { CoreSitePublicConfigResponse } from '@classes/site';
 import { CoreUserProfileFieldDelegate } from '@features/user/services/user-profile-field-delegate';
@@ -217,12 +216,13 @@ export class CoreLoginEmailSignupPage implements OnInit {
             this.countryControl.setValue(this.settings.country || '');
         }
 
-        this.namefieldsErrors = {};
+        const namefieldsErrors = {};
         if (this.settings.namefields) {
             this.settings.namefields.forEach((field) => {
-                this.namefieldsErrors![field] = CoreLoginHelper.getErrorMessages('core.login.missing' + field);
+                namefieldsErrors[field] = CoreLoginHelper.getErrorMessages('core.login.missing' + field);
             });
         }
+        this.namefieldsErrors = namefieldsErrors;
 
         this.countries = await CoreUtils.getCountryListSorted();
     }
@@ -234,7 +234,7 @@ export class CoreLoginEmailSignupPage implements OnInit {
      */
     protected treatSiteConfig(): boolean {
         if (this.siteConfig?.registerauth == 'email' && !CoreLoginHelper.isEmailSignupDisabled(this.siteConfig)) {
-            this.siteName = CoreConstants.CONFIG.sitename ? CoreConstants.CONFIG.sitename : this.siteConfig.sitename;
+            this.siteName = this.siteConfig.sitename;
             this.authInstructions = this.siteConfig.authinstructions;
             this.ageDigitalConsentVerification = this.siteConfig.agedigitalconsentverification;
             this.supportName = this.siteConfig.supportname;

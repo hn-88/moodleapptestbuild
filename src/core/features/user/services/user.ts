@@ -55,6 +55,16 @@ export const USER_PROFILE_REFRESHED = 'CoreUserProfileRefreshed';
 export const USER_PROFILE_PICTURE_UPDATED = 'CoreUserProfilePictureUpdated';
 
 /**
+ * Value set in timezone when using the server's timezone.
+ */
+export const USER_PROFILE_SERVER_TIMEZONE = '99';
+
+/**
+ * Fake ID for a "no reply" user.
+ */
+export const USER_NOREPLY_USER = -10;
+
+/**
  * Service to provide user functionalities.
  */
 @Injectable({ providedIn: 'root' })
@@ -887,6 +897,7 @@ export type CoreUserPreference = {
 export type CoreUserProfileField = {
     type: string; // The type of the custom field - text field, checkbox...
     value: string; // The value of the custom field.
+    displayvalue?: string; // @since 4.2. Formatted value of the custom field.
     name: string; // The name of the custom field.
     shortname: string; // The shortname of the custom field - to be able to build the field class in the code.
 };

@@ -601,6 +601,8 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
                     module: this.module,
                     ...options,
                 },
+                animated: !options.replace,
+                replace: options.replace,
             },
         );
     }
@@ -649,6 +651,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
                 subwikiId: subwikiId,
                 userId: userId,
                 groupId: groupId,
+                replace: true,
             });
         }
     }
@@ -707,12 +710,9 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * Checks if sync has succeed from result sync data.
-     *
-     * @param result Data returned on the sync function.
-     * @returns If suceed or not.
+     * @inheritdoc
      */
-    protected hasSyncSucceed(result: AddonModWikiSyncWikiResult | undefined): boolean {
+    protected hasSyncSucceed(result: AddonModWikiSyncWikiResult): boolean {
         if (!result) {
             return false;
         }
@@ -812,7 +812,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
 
             if (this.isCurrentView && syncEventData.warnings && syncEventData.warnings.length) {
                 // Show warnings.
-                CoreDomUtils.showErrorModal(syncEventData.warnings[0]);
+                CoreDomUtils.showAlert(undefined, syncEventData.warnings[0]);
             }
 
             // Check if current page was created or discarded.
@@ -831,6 +831,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         const subwiki = await CoreDomUtils.openPopover<AddonModWikiSubwiki>({
             component: AddonModWikiSubwikiPickerComponent,
             componentProps: {
+                courseId: this.courseId,
                 subwikis: this.subwikiData.subwikis,
                 currentSubwiki: this.currentSubwiki,
             },
@@ -843,13 +844,11 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
     }
 
     /**
-     * Performs the sync of the activity.
-     *
-     * @returns Promise resolved when done.
+     * @inheritdoc
      */
-    protected async sync(): Promise<AddonModWikiSyncWikiResult | undefined> {
+    protected async sync(): Promise<AddonModWikiSyncWikiResult> {
         if (!this.wiki) {
-            return;
+            throw new CoreError('Cannot sync without a wiki.');
         }
 
         return AddonModWikiSync.syncWiki(this.wiki.id, this.courseId, this.wiki.coursemodule);
@@ -889,7 +888,7 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         await Promise.all(this.loadedSubwikis.map(async (subwiki) => {
             let groupLabel = '';
 
-            if (subwiki.groupid == 0 && subwiki.userid == 0) {
+            if (subwiki.groupid === 0 && subwiki.userid === 0) {
                 // Add 'All participants' subwiki if needed at the start.
                 if (!allParticipants) {
                     subwikiList.unshift({
@@ -903,15 +902,15 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
                     allParticipants = true;
                 }
             } else {
-                if (subwiki.groupid != 0 && userGroups.length > 0) {
+                if (subwiki.groupid !== 0 && userGroups.length > 0) {
                     // Get groupLabel if it has groupId.
                     const group = userGroups.find(group => group.id == subwiki.groupid);
-                    groupLabel = group?.name || '';
+                    groupLabel = group?.name ?? '';
                 } else {
                     groupLabel = Translate.instant('addon.mod_wiki.notingroup');
                 }
 
-                if (subwiki.userid != 0) {
+                if (subwiki.userid !== 0) {
                     if (!multiLevelList && subwiki.groupid != 0) {
                         multiLevelList = true;
                     }
@@ -957,8 +956,6 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
         showMyGroupsLabel: boolean,
         multiLevelList: boolean,
     ): void {
-        subwikiList.sort((a, b) => a.groupid - b.groupid);
-
         this.groupWiki = showMyGroupsLabel;
         this.subwikiData.count = subwikiList.length;
 
@@ -1040,34 +1037,39 @@ export class AddonModWikiIndexComponent extends CoreCourseModuleMainActivityComp
                 grouping.subwikis.push(subwiki);
             });
         } else if (showMyGroupsLabel) {
-            const noGrouping: AddonModWikiSubwikiListGrouping = { label: '', subwikis: [] };
-            const myGroupsGrouping: AddonModWikiSubwikiListGrouping = { label: Translate.instant('core.mygroups'), subwikis: [] };
-            const otherGroupsGrouping: AddonModWikiSubwikiListGrouping = {
-                label: Translate.instant('core.othergroups'),
-                subwikis: [],
-            };
+            const noGroupSubwikis: AddonModWikiSubwikiListSubwiki[] = [];
+            const myGroupsSubwikis: AddonModWikiSubwikiListSubwiki[] = [];
+            const otherGroupsSubwikis: AddonModWikiSubwikiListSubwiki[] = [];
 
-            // As we loop over each subwiki, add it to the current group
+            // As we loop over each subwiki, add it to the current group.
             subwikiList.forEach((subwiki) => {
                 // Add the subwiki to the currently active grouping.
-                if (subwiki.canedit === undefined) {
-                    noGrouping.subwikis.push(subwiki);
+                if (subwiki.groupid === 0 && subwiki.userid === 0) {
+                    // All participants
+                    noGroupSubwikis.push(subwiki);
                 } else if (subwiki.canedit) {
-                    myGroupsGrouping.subwikis.push(subwiki);
+                    myGroupsSubwikis.push(subwiki);
                 } else {
-                    otherGroupsGrouping.subwikis.push(subwiki);
+                    otherGroupsSubwikis.push(subwiki);
                 }
             });
 
-            // Add each grouping to the subwikis
-            if (noGrouping.subwikis.length > 0) {
-                this.subwikiData.subwikis.push(noGrouping);
-            }
-            if (myGroupsGrouping.subwikis.length > 0) {
-                this.subwikiData.subwikis.push(myGroupsGrouping);
-            }
-            if (otherGroupsGrouping.subwikis.length > 0) {
-                this.subwikiData.subwikis.push(otherGroupsGrouping);
+            if (myGroupsSubwikis.length > 0 && otherGroupsSubwikis.length > 0) {
+                // Add each grouping to the subwikis.
+                if (noGroupSubwikis.length > 0) {
+                    this.subwikiData.subwikis.push({ label: '', subwikis: noGroupSubwikis });
+                }
+
+                if (myGroupsSubwikis.length > 0) {
+                    this.subwikiData.subwikis.push({ label: Translate.instant('core.mygroups'), subwikis: myGroupsSubwikis });
+                }
+
+                if (otherGroupsSubwikis.length > 0) {
+                    this.subwikiData.subwikis.push({ label: Translate.instant('core.othergroups'), subwikis: otherGroupsSubwikis });
+                }
+            } else {
+                // Mix it again since it does not have groups and other groups.
+                this.subwikiData.subwikis.push({ label: '', subwikis: subwikiList });
             }
         } else {
             this.subwikiData.subwikis.push({ label: '', subwikis: subwikiList });
@@ -1093,4 +1095,5 @@ type AddonModWikiOpenPageOptions = {
     pageId?: number;
     userId?: number;
     groupId?: number;
+    replace?: boolean;
 };

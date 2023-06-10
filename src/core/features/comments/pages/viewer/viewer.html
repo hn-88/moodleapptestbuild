@@ -52,7 +52,7 @@
             </ng-container>
 
             <ion-badge class="ion-text-wrap" color="info" *ngIf="hasOffline">
-                <ion-icon name="fas-exclamation-triangle" aria-hidden="true"></ion-icon>
+                <ion-icon name="fas-triangle-exclamation" aria-hidden="true"></ion-icon>
                 {{ 'core.thereisdatatosync' | translate:{$a: 'core.comments.comments' | translate | lowercase } }}
             </ion-badge>
             <core-message *ngIf="hasOffline && offlineComment" [message]="offlineComment" [text]="offlineComment.content"
@@ -64,7 +64,7 @@
     </core-loading>
 </ion-content>
 <ion-footer class="footer-adjustable" *ngIf="commentsLoaded && canAddComments">
-    <ion-toolbar color="contrast">
+    <ion-toolbar>
         <core-send-message-form [sendDisabled]="sending" [message]="newComment" (onSubmit)="addComment($event)"
             [placeholder]="'core.comments.addcomment' | translate">
         </core-send-message-form>

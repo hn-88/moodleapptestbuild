@@ -76,11 +76,11 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
     @Input() initialSectionNumber?: number; // The section to load first (by number).
     @Input() moduleId?: number; // The module ID to scroll to. Must be inside the initial selected section.
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @ViewChildren(CoreDynamicComponent) dynamicComponents?: QueryList<CoreDynamicComponent<any>>;
 
     // All the possible component classes.
     courseFormatComponent?: Type<unknown>;
-    courseSummaryComponent?: Type<unknown>;
     singleSectionComponent?: Type<unknown>;
     allSectionsComponent?: Type<unknown>;
 
@@ -229,7 +229,6 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
 
         await Promise.all([
             this.loadCourseFormatComponent(),
-            this.loadCourseSummaryComponent(),
             this.loadSingleSectionComponent(),
             this.loadAllSectionsComponent(),
         ]);
@@ -243,15 +242,6 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      */
     protected async loadCourseFormatComponent(): Promise<void> {
         this.courseFormatComponent = await CoreCourseFormatDelegate.getCourseFormatComponent(this.course);
-    }
-
-    /**
-     * Load course summary component.
-     *
-     * @returns Promise resolved when done.
-     */
-    protected async loadCourseSummaryComponent(): Promise<void> {
-        this.courseSummaryComponent = await CoreCourseFormatDelegate.getCourseSummaryComponent(this.course);
     }
 
     /**
@@ -451,8 +441,10 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
                             await CoreCourseModuleDelegate.getModuleDataFor(module.modname, module, this.course.id);
         }
 
-        if (CoreCourseHelper.canUserViewModule(module, section) && module.handlerData?.action) {
-            module.handlerData.action(data.event, module, module.course);
+        if (CoreCourseHelper.canUserViewModule(module, section)) {
+            this.scrollToModule(module.id);
+
+            module.handlerData?.action?.(data.event, module, module.course);
         }
 
         this.moduleId = data.moduleId;

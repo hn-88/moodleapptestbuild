@@ -89,7 +89,7 @@ export class CoreFileComponent implements OnInit, OnDestroy {
 
         this.isIOS = CorePlatform.isIOS();
         this.defaultIsOpenWithPicker = CoreFileHelper.defaultIsOpenWithPicker();
-        this.openButtonIcon = this.defaultIsOpenWithPicker ? 'fas-file' : 'fas-share-square';
+        this.openButtonIcon = this.defaultIsOpenWithPicker ? 'fas-file' : 'fas-share-from-square';
         this.openButtonLabel = this.defaultIsOpenWithPicker ? 'core.openfile' : 'core.openwith';
 
         if (CoreUtils.isTrueOrOne(this.showSize) && this.fileSize && this.fileSize >= 0) {
@@ -149,9 +149,13 @@ export class CoreFileComponent implements OnInit, OnDestroy {
      * @param isOpenButton Whether the open button was clicked.
      * @returns Promise resolved when file is opened.
      */
-    openFile(ev?: Event, isOpenButton = false): Promise<void> {
+    async openFile(ev?: Event, isOpenButton = false): Promise<void> {
         ev?.preventDefault();
         ev?.stopPropagation();
+
+        if (!this.file) {
+            return;
+        }
 
         const options: CoreUtilsOpenFileOptions = {};
         if (isOpenButton) {
@@ -159,14 +163,16 @@ export class CoreFileComponent implements OnInit, OnDestroy {
             options.iOSOpenFileAction = this.defaultIsOpenWithPicker ? OpenFileAction.OPEN : OpenFileAction.OPEN_WITH;
         }
 
-        return CoreFileHelper.downloadAndOpenFile(this.file!, this.component, this.componentId, this.state, (event) => {
-            if (event && 'calculating' in event && event.calculating) {
-                // The process is calculating some data required for the download, show the spinner.
-                this.isDownloading = true;
-            }
-        }, undefined, options).catch((error) => {
+        try {
+            return await CoreFileHelper.downloadAndOpenFile(this.file, this.component, this.componentId, this.state, (event) => {
+                if (event && 'calculating' in event && event.calculating) {
+                    // The process is calculating some data required for the download, show the spinner.
+                    this.isDownloading = true;
+                }
+            }, undefined, options);
+        } catch (error) {
             CoreDomUtils.showErrorModalDefault(error, 'core.errordownloading', true);
-        });
+        }
     }
 
     /**
@@ -264,7 +270,7 @@ export class CoreFileComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Component destroyed.
+     * @inheritdoc
      */
     ngOnDestroy(): void {
         this.observer?.off();

@@ -28,6 +28,7 @@ import {
     CoreWSExternalWarning,
     CoreWSUploadFileResult,
     CoreWSPreSetsSplitRequest,
+    CoreWSTypeExpected,
 } from '@services/ws';
 import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
 import { CoreTextUtils } from '@services/utils/text';
@@ -61,6 +62,7 @@ import { finalize, map, mergeMap } from 'rxjs/operators';
 import { firstValueFrom } from '../utils/rxjs';
 import { CoreSiteError } from '@classes/errors/siteerror';
 import { CoreUserAuthenticatedSupportConfig } from '@features/user/classes/support/authenticated-support-config';
+import { CoreLoginHelper } from '@features/login/services/login-helper';
 
 /**
  * QR Code type enumeration.
@@ -107,7 +109,7 @@ export class CoreSite {
         '3.11': 2021051700,
         '4.0': 2022041900,
         '4.1': 2022112800,
-        '4.2': 2023011300, // @todo [4.2] replace with right value when released. Using a tmp value to be able to test new things.
+        '4.2': 2023042400,
     };
 
     // Possible cache update frequencies.
@@ -289,13 +291,21 @@ export class CoreSite {
      *
      * @returns Site name.
      */
-    getSiteName(): string {
-        if (CoreConstants.CONFIG.sitename) {
-            // Overridden by config.
-            return CoreConstants.CONFIG.sitename;
-        } else {
-            return this.infos?.sitename || '';
+    async getSiteName(): Promise<string> {
+        if (this.infos?.sitename) {
+            return this.infos?.sitename;
         }
+
+        // Fallback.
+        const isSigleFixedSite = await CoreLoginHelper.isSingleFixedSite();
+
+        if (isSigleFixedSite) {
+            const sites = await CoreLoginHelper.getAvailableSites();
+
+            return sites[0].name;
+        }
+
+        return '';
     }
 
     /**
@@ -2562,7 +2572,7 @@ export type CoreSiteWSPreSets = {
     /**
      * Defaults to 'object'. Use it when you expect a type that's not an object|array.
      */
-    typeExpected?: string;
+    typeExpected?: CoreWSTypeExpected;
 
     /**
      * Wehther a pending request in the queue matching the same function and arguments can be reused instead of adding

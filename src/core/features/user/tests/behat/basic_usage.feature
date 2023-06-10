@@ -3,8 +3,8 @@ Feature: Test basic usage of user features
 
   Background:
     Given the following "users" exist:
-      | username | firstname | lastname |
-      | student1 | Student   | Student  |
+      | username | firstname | lastname | timezone |
+      | student1 | Student   | Student  | 99       |
 
   Scenario: Complete missing fields
     Given the following "custom profile fields" exist:
@@ -51,3 +51,40 @@ Feature: Test basic usage of user features
 
     When I press "Reconnect" in the app
     Then I should find "Acceptance test site" in the app
+
+  Scenario: View profile
+    Given I entered the app as "student1"
+    When I press the user menu button in the app
+    And I press "Student" in the app
+    Then I should find "student1@example.com" in the app
+    And I should find "Student Student" in the app
+    And the UI should match the snapshot
+
+  @lms_from4.2
+  Scenario: View timezone in profile
+    Given the following config values are set as admin:
+      | timezone      | Europe/Madrid |
+      | forcetimezone | 99            |
+    And the following "users" exist:
+      | username | firstname | lastname | timezone      |
+      | student2 | John      | Smith    | Asia/Shanghai |
+    And the following "courses" exist:
+      | fullname | shortname |
+      | Course 1 | C1        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | student1 | C1     | student |
+      | student2 | C1     | student |
+    And I entered the course "Course 1" as "student1" in the app
+    When I press "Participants" in the app
+    And I press "Student Student" in the app
+    And I press "Details" in the app
+    Then I should find "Europe/Madrid" in the app
+    And I should not find "Asia/Shanghai" in the app
+
+    When I press the back button in the app
+    And I press the back button in the app
+    And I press "John Smith" in the app
+    And I press "Details" in the app
+    Then I should find "Asia/Shanghai" in the app
+    And I should not find "Europe/Madrid" in the app

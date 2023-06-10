@@ -16,12 +16,12 @@
                     [iconAction]="syncIcon" [closeOnClick]="false">
                 </core-context-menu-item>
                 <core-context-menu-item [hidden]="!event || !event.canedit || event.deleted || (!canEdit && event.id > 0)" [priority]="300"
-                    [content]="'core.edit' | translate" (action)="openEdit()" iconAction="fas-edit">
+                    [content]="'core.edit' | translate" (action)="openEdit()" iconAction="fas-pen">
                 </core-context-menu-item>
                 <core-context-menu-item [hidden]="!event || !event.candelete || event.deleted" [priority]="200"
                     [content]="'core.delete' | translate" (action)="deleteEvent()" iconAction="fas-trash"></core-context-menu-item>
                 <core-context-menu-item [hidden]="!event || !event.deleted" [priority]="200" [content]="'core.restore' | translate"
-                    (action)="undoDelete()" iconAction="fas-undo-alt"></core-context-menu-item>
+                    (action)="undoDelete()" iconAction="fas-rotate-left"></core-context-menu-item>
             </core-context-menu>
         </ion-buttons>
     </ion-toolbar>
@@ -31,14 +31,6 @@
         <ion-refresher-content pullingText="{{ 'core.pulltorefresh' | translate }}"></ion-refresher-content>
     </ion-refresher>
     <core-loading [hideUntil]="eventLoaded">
-        <!-- There is data to be synchronized -->
-        <ion-card class="core-warning-card" *ngIf="hasOffline || (event && event.deleted)">
-            <ion-item>
-                <ion-icon name="fas-exclamation-triangle" slot="start" aria-hidden="true"></ion-icon>
-                <ion-label>{{ 'core.hasdatatosync' | translate:{$a: 'addon.calendar.calendarevent' | translate} }}</ion-label>
-            </ion-item>
-        </ion-card>
-
         <ion-list *ngIf="event">
             <ion-item class="ion-text-wrap addon-calendar-event" collapsible [ngClass]="['addon-calendar-eventtype-'+event.eventtype]">
                 <core-mod-icon *ngIf="event.moduleIcon" [modicon]="event.moduleIcon" [showAlt]="false" [modname]="event.modulename"
@@ -58,11 +50,17 @@
                     </h1>
                 </ion-label>
             </ion-item>
+            <!-- There is data to be synchronized -->
+            <ion-card class="core-warning-card" *ngIf="hasOffline || event.deleted">
+                <ion-item>
+                    <ion-icon name="fas-triangle-exclamation" slot="start" aria-hidden="true"></ion-icon>
+                    <ion-label>{{ 'core.hasdatatosync' | translate:{$a: 'addon.calendar.calendarevent' | translate} }}</ion-label>
+                </ion-item>
+            </ion-card>
             <ion-item class="ion-text-wrap">
                 <ion-label>
                     <p class="item-heading">{{ 'addon.calendar.when' | translate }}</p>
-                    <core-format-text [text]="event.formattedtime" [contextLevel]="event.contextLevel"
-                        [contextInstanceId]="event.contextInstanceId"></core-format-text>
+                    <core-format-text [text]="event.formattedtime" [filter]="false"></core-format-text>
                 </ion-label>
                 <ion-note slot="end" *ngIf="event.deleted">
                     <ion-icon name="fas-trash" aria-hidden="true"></ion-icon> {{ 'core.deletedoffline' | translate }}
@@ -86,7 +84,10 @@
             <ion-item class="ion-text-wrap core-groupname" *ngIf="groupName">
                 <ion-label>
                     <p class="item-heading">{{ 'core.group' | translate}}</p>
-                    <p>{{ groupName }}</p>
+                    <p>
+                        <core-format-text [text]="groupName" contextLevel="course" [contextInstanceId]="event.courseid">
+                        </core-format-text>
+                    </p>
                 </ion-label>
             </ion-item>
             <ion-item class="ion-text-wrap" *ngIf="categoryPath">

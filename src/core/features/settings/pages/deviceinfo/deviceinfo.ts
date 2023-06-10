@@ -27,6 +27,7 @@ import { CoreDomUtils } from '@services/utils/dom';
 import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
 import { CoreNetwork } from '@services/network';
+import { CoreLoginHelper } from '@features/login/services/login-helper';
 
 /**
  * Device Info to be shown and copied to clipboard.
@@ -57,6 +58,7 @@ interface CoreSettingsDeviceInfo {
     uuid?: string;
     pushId?: string;
     localNotifAvailable: string;
+    encryptedPushSupported?: boolean;
 }
 
 /**
@@ -167,10 +169,6 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         }
 
         const currentSite = sitesProvider.getCurrentSite();
-
-        this.deviceInfo.siteUrl = (currentSite?.getURL()) ||
-            (typeof CoreConstants.CONFIG.siteurl == 'string' && CoreConstants.CONFIG.siteurl) || undefined;
-        this.deviceInfo.isPrefixedUrl = !!CoreConstants.CONFIG.siteurl;
         this.deviceInfo.siteId = currentSite?.getId();
         this.deviceInfo.siteVersion = currentSite?.getInfo()?.release;
 
@@ -189,11 +187,20 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
      * Async part of the constructor.
      */
     protected async asyncInit(): Promise<void> {
+        const sitesProvider = CoreSites.instance;
         const fileProvider = CoreFile.instance;
 
         const lang = await CoreLang.getCurrentLanguage();
         this.deviceInfo.currentLanguage = lang;
         this.currentLangName = CoreConstants.CONFIG.languages[lang];
+
+        const currentSite = sitesProvider.getCurrentSite();
+        const isSingleFixedSite = await CoreLoginHelper.isSingleFixedSite();
+        const sites = await CoreLoginHelper.getAvailableSites();
+        const firstUrl = isSingleFixedSite && sites[0].url;
+
+        this.deviceInfo.siteUrl = currentSite?.getURL() || firstUrl || undefined;
+        this.deviceInfo.isPrefixedUrl = !!sites.length;
 
         if (fileProvider.isAvailable()) {
             const basepath = await fileProvider.getBasePath();
@@ -204,6 +211,11 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         const showDevOptionsOnConfig = await CoreConfig.get('showDevOptions', 0);
         this.devOptionsForced = CoreConstants.BUILD.isDevelopment || CoreConstants.BUILD.isTesting;
         this.showDevOptions = this.devOptionsForced || showDevOptionsOnConfig == 1;
+
+        const publicKey = this.deviceInfo.pushId ?
+            await CoreUtils.ignoreErrors(CorePushNotifications.getPublicKey()) :
+            undefined;
+        this.deviceInfo.encryptedPushSupported = publicKey !== undefined;
     }
 
     /**

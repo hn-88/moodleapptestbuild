@@ -1,7 +1,8 @@
 <div class="core-rte-editor-container" (click)="focusRTE()" [class.toolbar-hidden]="toolbarHidden">
     <div [hidden]="!rteEnabled" #editor class="core-rte-editor" role="textbox" contenteditable="true"
         [attr.aria-labelledby]="ariaLabelledBy" [attr.data-placeholder-text]="placeholder" (focus)="showToolbar($event)"
-        (blur)="hideToolbar($event)">
+        (blur)="hideToolbar($event)" (keydown)="onKeyDown($event)" (keyup)="onChange()" (change)="onChange()" (paste)="onChange()"
+        (input)="onChange()">
     </div>
 
     <ion-textarea [hidden]="rteEnabled" #textarea class="core-textarea" role="textbox" [attr.name]="name" ngControl="control"
@@ -9,7 +10,7 @@
     </ion-textarea>
 
     <div class="core-rte-info-message" *ngIf="infoMessage">
-        <ion-icon name="fas-info-circle" aria-hidden="true"></ion-icon>
+        <ion-icon name="fas-circle-info" aria-hidden="true"></ion-icon>
         {{ infoMessage | translate }}
     </div>
 </div>
@@ -44,7 +45,7 @@
             </button>
         </ion-slide>
         <ion-slide>
-            <button [disabled]="!rteEnabled" [attr.aria-pressed]="toolbarStyles.strike" [title]="'core.editor.strike' | translate"
+            <button [disabled]="!rteEnabled" [attr.aria-pressed]="toolbarStyles.strike" [title]="'core.editor.strikethrough' | translate"
                 (click)="buttonAction($event, 'strikethrough', 'strike')" (keyup)="buttonAction($event, 'strikethrough', 'strike')"
                 (mousedown)="downAction($event)" (keydown)="downAction($event)" tabindex="0">
                 <ion-icon name="fas-strikethrough" aria-hidden="true"></ion-icon>
@@ -113,7 +114,7 @@
         <ion-slide *ngIf="isPhone">
             <button [title]="'core.editor.hidetoolbar' | translate" (click)="hideToolbar($event, true)" (keyup)="hideToolbar($event, true)"
                 (mousedown)="downAction($event)" (keydown)="downAction($event)" tabindex="0">
-                <ion-icon name="fas-times" aria-hidden="true"></ion-icon>
+                <ion-icon name="fas-xmark" aria-hidden="true"></ion-icon>
             </button>
         </ion-slide>
     </ion-slides>

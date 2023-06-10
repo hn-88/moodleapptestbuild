@@ -71,6 +71,15 @@ Feature: Test basic usage of one course in app
       | activity      | name                  | intro             | course | idnumber       | groupmode | section |
       | workshop      | Test workshop name    | Test workshop     | C1     | workshop       | 0         | 3       |
 
+    # TODO remove once MDL-77951 is resolved.
+    And I log in as "admin"
+    And I am on "Course 1" course homepage with editing mode on
+    And I open "Choice course 1" actions menu
+    And I click on "Move right" "link" in the "Choice course 1" activity
+    And I open "assignment" actions menu
+    And I click on "Move right" "link" in the "assignment" activity
+    And I log out
+
   Scenario: View course contents
     When I entered the course "Course 1" as "student1" in the app
     Then the header should be "Course 1" in the app
@@ -91,7 +100,7 @@ Feature: Test basic usage of one course in app
 
     When I set "page-core-course-index .core-course-thumb" styles to "--course-color" "lightblue"
     And I set "page-core-course-index .core-course-thumb" styles to "--course-color-tint" "white"
-    # Then the UI should match the snapshot
+    Then the UI should match the snapshot
 
     When I press "Choice course 1" in the app
     Then the header should be "Choice course 1" in the app
@@ -406,7 +415,8 @@ Feature: Test basic usage of one course in app
 
   @lms_from4.0
   Scenario: Self enrol
-    Given I log in as "teacher1"
+    Given the Moodle site is compatible with this feature
+    And I log in as "teacher1"
     And I add "Self enrolment" enrolment method in "Course 1" with:
       | Custom instance name | Student self enrolment |
     And I entered the app as "student2"

@@ -28,6 +28,8 @@ import { CoreScreen, CoreScreenOrientation } from '@services/screen';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { NavigationStart } from '@angular/router';
+import { CoreSites } from '@services/sites';
+import { CoreUrl } from '@singletons/url';
 
 @Component({
     selector: 'core-iframe',
@@ -45,6 +47,7 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
     @Input() allowFullscreen?: boolean | string;
     @Input() showFullscreenOnToolbar?: boolean | string;
     @Input() autoFullscreenOnRotate?: boolean | string;
+    @Input() allowAutoLogin = true;
     @Output() loaded: EventEmitter<HTMLIFrameElement> = new EventEmitter<HTMLIFrameElement>();
 
     loading?: boolean;
@@ -153,19 +156,37 @@ export class CoreIframeComponent implements OnChanges, OnDestroy {
      * Detect changes on input properties.
      */
     async ngOnChanges(changes: {[name: string]: SimpleChange }): Promise<void> {
-        if (changes.src) {
-            const url = CoreUrlUtils.getYoutubeEmbedUrl(changes.src.currentValue) || changes.src.currentValue;
+        if (!changes.src) {
+            return;
+        }
+
+        let url = changes.src.currentValue;
+
+        if (!CoreUrlUtils.isLocalFileUrl(url)) {
+            url = CoreUrlUtils.getYoutubeEmbedUrl(changes.src.currentValue) || changes.src.currentValue;
             this.displayHelp = CoreIframeUtils.shouldDisplayHelpForUrl(url);
 
+            const currentSite = CoreSites.getCurrentSite();
+            if (this.allowAutoLogin && currentSite) {
+                // Format the URL to add auto-login if needed.
+                url = await currentSite.getAutoLoginUrl(url, false);
+            }
+
+            if (currentSite?.isVersionGreaterEqualThan('3.7') && CoreUrl.isVimeoVideoUrl(url)) {
+                // Only treat the Vimeo URL if site is 3.7 or bigger. In older sites the width and height params were mandatory,
+                // and there was no easy way to make the iframe responsive.
+                url = CoreUrl.getVimeoPlayerUrl(url, currentSite) ?? url;
+            }
+
             await CoreIframeUtils.fixIframeCookies(url);
-
-            this.safeUrl = DomSanitizer.bypassSecurityTrustResourceUrl(CoreFile.convertFileSrc(url));
-
-            // Now that the URL has been set, initialize the iframe. Wait for the iframe to the added to the DOM.
-            setTimeout(() => {
-                this.init();
-            });
         }
+
+        this.safeUrl = DomSanitizer.bypassSecurityTrustResourceUrl(CoreFile.convertFileSrc(url));
+
+        // Now that the URL has been set, initialize the iframe. Wait for the iframe to the added to the DOM.
+        setTimeout(() => {
+            this.init();
+        });
     }
 
     /**

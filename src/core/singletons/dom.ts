@@ -88,21 +88,23 @@ export class CoreDom {
      *
      * @param element Element to check.
      * @param intersectionRatio Intersection ratio (From 0 to 1).
+     * @param container Container where element is located
      * @returns True if in viewport.
      */
-    static isElementInViewport(element: HTMLElement, intersectionRatio = 1): boolean {
+    static isElementInViewport(element: HTMLElement, intersectionRatio = 1, container: HTMLElement | null = null): boolean {
         const elementRectangle = element.getBoundingClientRect();
-
+        const containerRectangle = container?.getBoundingClientRect();
         const elementArea = elementRectangle.width * elementRectangle.height;
+
         if (elementArea == 0) {
             return false;
         }
 
         const intersectionRectangle = {
-            top: Math.max(0, elementRectangle.top),
-            left: Math.max(0, elementRectangle.left),
-            bottom: Math.min(window.innerHeight, elementRectangle.bottom),
-            right: Math.min(window.innerWidth, elementRectangle.right),
+            top: Math.max(containerRectangle?.top ?? 0, elementRectangle.top),
+            left: Math.max(containerRectangle?.left ?? 0, elementRectangle.left),
+            bottom: Math.min(containerRectangle?.bottom ?? window.innerHeight, elementRectangle.bottom),
+            right: Math.min(containerRectangle?.right ?? window.innerWidth, elementRectangle.right),
         };
 
         const intersectionArea = (intersectionRectangle.right - intersectionRectangle.left) *
@@ -534,9 +536,15 @@ export class CoreDom {
         element: HTMLElement & {disabled?: boolean},
         callback: (event: MouseEvent | KeyboardEvent) => void,
     ): void {
-        element.addEventListener('click', (event) => callback(event));
+        const enabled = () => !CoreUtils.isTrueOrOne(element.dataset.disabledA11yClicks ?? 'false');
+
+        element.addEventListener('click', (event) => enabled() && callback(event));
 
         element.addEventListener('keydown', (event) => {
+            if (!enabled()) {
+                return;
+            }
+
             if (event.key === ' ' || event.key === 'Enter') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -544,6 +552,10 @@ export class CoreDom {
         });
 
         element.addEventListener('keyup', (event) => {
+            if (!enabled()) {
+                return;
+            }
+
             if (event.key === ' ' || event.key === 'Enter') {
                 event.preventDefault();
                 event.stopPropagation();

@@ -339,7 +339,7 @@ export class CoreTextUtilsProvider {
 
         // Before stripping tags, add a space after the close tag of anything that is not obviously inline.
         // Also, br is a special case because it definitely delimits a word, but has no close tag.
-        text = text.replace(/(<\/(?!a>|b>|del>|em>|i>|ins>|s>|small>|strong>|sub>|sup>|u>)\w+>|<br>|<br\s*\/>)/ig, '$1 ');
+        text = text.replace(/(<\/(?!a>|b>|del>|em>|i>|ins>|s>|small>|span>|strong>|sub>|sup>|u>)\w+>|<br>|<br\s*\/>)/ig, '$1 ');
 
         // Now remove HTML tags.
         text = text.replace(/(<([^>]+)>)/ig, '');
@@ -538,7 +538,7 @@ export class CoreTextUtilsProvider {
      * @returns Error message, undefined if not found.
      */
     getErrorMessageFromError(error?: CoreAnyError): string | undefined {
-        if (typeof error == 'string') {
+        if (typeof error === 'string') {
             return error;
         }
 
@@ -807,7 +807,10 @@ export class CoreTextUtilsProvider {
         // Index the pluginfile URLs by file name.
         const pluginfileMap: {[name: string]: string} = {};
         files.forEach((file) => {
-            pluginfileMap[file.filename!] = CoreFileHelper.getFileUrl(file);
+            if (!file.filename) {
+                return;
+            }
+            pluginfileMap[file.filename] = CoreFileHelper.getFileUrl(file);
         });
 
         // Replace each draftfile with the corresponding pluginfile URL.
@@ -872,9 +875,13 @@ export class CoreTextUtilsProvider {
         const draftfileUrlRegexPrefix = this.escapeForRegex(draftfileUrl) + '/[^/]+/[^/]+/[^/]+/[^/]+/';
 
         files.forEach((file) => {
+            if (!file.filename) {
+                return;
+            }
+
             // Search the draftfile URL in the original text.
             const matches = originalText.match(
-                new RegExp(draftfileUrlRegexPrefix + this.escapeForRegex(file.filename!) + '[^\'" ]*', 'i'),
+                new RegExp(draftfileUrlRegexPrefix + this.escapeForRegex(file.filename) + '[^\'" ]*', 'i'),
             );
 
             if (!matches || !matches[0]) {

@@ -15,7 +15,7 @@
             <ion-button fill="clear" id="addon-mod_quiz-connection-error-button" [hidden]="!autoSaveError"
                 (click)="showConnectionError($event)" [attr.aria-label]="'addon.mod_quiz.connectionerror' | translate"
                 aria-haspopup="dialog">
-                <ion-icon name="fas-exclamation-circle" slot="icon-only" aria-hidden="true"></ion-icon>
+                <ion-icon name="fas-circle-exclamation" slot="icon-only" aria-hidden="true"></ion-icon>
             </ion-button>
             <ion-button *ngIf="navigation.length" [attr.aria-label]="'addon.mod_quiz.opentoc' | translate" (click)="openNavigation()">
                 <ion-icon name="fas-bookmark" slot="icon-only" aria-hidden="true"></ion-icon>
@@ -43,11 +43,13 @@
                 <ion-card id="addon-mod_quiz-question-{{question.slot}}">
                     <!-- "Header" of the question. -->
                     <ion-item-divider>
-                        <ion-label>
-                            <h2 *ngIf="question.number" class="inline">
-                                {{ 'core.question.questionno' | translate:{$a: question.number} }}
+                        <ion-label class="ion-text-wrap">
+                            <h2 *ngIf="question.type !== 'description' && question.questionnumber" class="inline">
+                                {{ 'core.question.questionno' | translate:{$a: question.questionnumber} }}
                             </h2>
-                            <h2 *ngIf="!question.number" class="inline">{{ 'core.question.information' | translate }}</h2>
+                            <h2 *ngIf="question.type === 'description' || !question.questionnumber" class="inline">
+                                {{ 'core.question.information' | translate }}
+                            </h2>
                         </ion-label>
                         <div *ngIf="question.status || question.readableMark" slot="end"
                             class="ion-text-wrap ion-margin-horizontal addon-mod_quiz-question-note">
@@ -108,12 +110,13 @@
 
             <!-- List of questions of the summary table. -->
             <ng-container *ngFor="let question of summaryQuestions">
-                <ion-item *ngIf="question.number" (click)="changePage(question.page, false, question.slot)"
-                    [attr.aria-label]="'core.question.questionno' | translate:{$a: question.number}" [detail]="!isSequential && canReturn"
-                    [button]="!isSequential && canReturn">
+                <ion-item *ngIf="question.type !== 'description' && question.questionnumber"
+                    (click)="changePage(question.page, false, question.slot)"
+                    [attr.aria-label]="'core.question.questionno' | translate:{$a: question.questionnumber}"
+                    [detail]="!isSequential && canReturn" [button]="!isSequential && canReturn">
                     <ion-label>
                         <ion-row class="ion-align-items-center">
-                            <ion-col size="3" class="ion-text-center">{{ question.number }}</ion-col>
+                            <ion-col size="3" class="ion-text-center ion-text-wrap">{{ question.questionnumber }}</ion-col>
                             <ion-col size="9" class="ion-text-center ion-text-wrap">{{ question.status }}</ion-col>
                         </ion-row>
                     </ion-label>
@@ -154,7 +157,7 @@
                 <ion-button *ngIf="preventSubmitMessages.length" expand="block" class="ion-margin ion-text-wrap" [href]="moduleUrl"
                     core-link [showBrowserWarning]="false">
                     {{ 'core.openinbrowser' | translate }}
-                    <ion-icon name="fas-external-link-alt" slot="end" aria-hidden="true"></ion-icon>
+                    <ion-icon name="fas-up-right-from-square" slot="end" aria-hidden="true"></ion-icon>
                 </ion-button>
 
                 <!-- Button to submit the quiz. -->

@@ -16,10 +16,11 @@ import { AfterViewInit, Directive, ElementRef, Input, OnChanges, SimpleChange } 
 import { CoreLogger } from '@singletons/logger';
 import { Http } from '@singletons';
 import { CoreConstants } from '@/core/constants';
+import { CorePromisedValue } from '@classes/promised-value';
 
 /**
- * Directive to enable font-awesome 5 as ionicons.
- * Check available icons at https://fontawesome.com/icons?d=gallery&m=free
+ * Directive to enable font-awesome 6.3 as ionicons.
+ * Check available icons at https://fontawesome.com/search?o=r&m=free
  *
  * Example usage:
  *
@@ -34,6 +35,8 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
      * Object used to store whether icons exist or not during development.
      */
     private static readonly DEV_ICONS_STATUS: Record<string, Promise<boolean>> = {};
+
+    protected static aliases?: CorePromisedValue<Record<string, string>>;
 
     @Input() name = '';
 
@@ -54,7 +57,7 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
         let iconName = this.name;
         let font = 'ionicons';
         const parts = iconName.split('-', 2);
-        if (parts.length == 2) {
+        if (parts.length === 2) {
             switch (parts[0]) {
                 case 'far':
                     library = 'regular';
@@ -82,7 +85,7 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
             }
         }
 
-        if (font == 'ionicons') {
+        if (font === 'ionicons') {
             this.element.removeAttribute('src');
             this.logger.warn(`Ionic icon ${this.name} detected`);
 
@@ -91,10 +94,21 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
 
         iconName = iconName.substring(parts[0].length + 1);
 
-        const src = `assets/fonts/${font}/${library}/${iconName}.svg`;
+        // Set it here to avoid loading unexisting icon paths (svg/iconName) caused by the tick delay of the checkIconAlias promise.
+        let src = `assets/fonts/${font}/${library}/${iconName}.svg`;
         this.element.setAttribute('src', src);
+
+        if (font === 'font-awesome') {
+            const iconNameChecked = await this.checkIconAlias(iconName);
+            if (iconNameChecked !== iconName) {
+                src = `assets/fonts/${font}/${library}/${iconName}.svg`;
+                this.element.setAttribute('src', src);
+            }
+        }
+
         this.element.classList.add('faicon');
         this.validateIcon(this.name, src);
+
     }
 
     /**
@@ -103,7 +117,7 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
     ngAfterViewInit(): void {
         if (!this.element.getAttribute('aria-label') &&
             !this.element.getAttribute('aria-labelledby') &&
-            this.element.getAttribute('aria-hidden') != 'true') {
+            this.element.getAttribute('aria-hidden') !== 'true') {
             this.logger.warn('Aria label not set on icon ' + this.name, this.element);
 
             this.element.setAttribute('aria-hidden', 'true');
@@ -111,7 +125,7 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
     }
 
     /**
-     * Detect changes on input properties.
+     * @inheritdoc
      */
     ngOnChanges(changes: { [name: string]: SimpleChange }): void {
         if (!changes.name || !this.name) {
@@ -119,6 +133,51 @@ export class CoreFaIconDirective implements AfterViewInit, OnChanges {
         }
 
         this.setIcon();
+    }
+
+    /**
+     * Check icon alias and returns the new icon name.
+     *
+     * @param iconName Icon name.
+     * @returns New icon name.
+     */
+    protected async checkIconAlias(iconName: string): Promise<string> {
+        const aliases = await CoreFaIconDirective.getIconsAliases();
+
+        if (aliases[iconName]) {
+            this.logger.error(`Icon ${iconName} is an alias of ${aliases[iconName]}, please use the new name.`);
+
+            return aliases[iconName];
+        }
+
+        return iconName;
+    }
+
+    /**
+     * Read the icon aliases json file.
+     *
+     * @returns Promise resolved when loaded.
+     */
+    protected static async getIconsAliases(): Promise<Record<string, string>> {
+        if (CoreFaIconDirective.aliases !== undefined) {
+            return CoreFaIconDirective.aliases;
+        }
+
+        CoreFaIconDirective.aliases = new CorePromisedValue();
+
+        try {
+            const aliases = await Http.get<Record<string, string>>('assets/fonts/font-awesome/aliases.json', {
+                responseType: 'json',
+            }).toPromise();
+
+            CoreFaIconDirective.aliases.resolve(aliases);
+
+            return aliases;
+        } catch {
+            CoreFaIconDirective.aliases.resolve({});
+
+            return {};
+        }
     }
 
     /**

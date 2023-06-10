@@ -585,14 +585,14 @@ export class CoreH5PContentValidator {
     }
 
     /**
-     * Check params for a whitelist of allowed properties.
+     * Check params for a allowlist of allowed properties.
      *
      * @param params Object to filter.
-     * @param whitelist List of keys to keep.
+     * @param allowlist List of keys to keep.
      */
-    filterParams(params: Record<string, unknown>, whitelist: string[]): void {
+    filterParams(params: Record<string, unknown>, allowlist: string[]): void {
         for (const key in params) {
-            if (whitelist.indexOf(key) == -1) {
+            if (allowlist.indexOf(key) == -1) {
                 delete params[key];
             }
         }
@@ -625,7 +625,7 @@ export class CoreH5PContentValidator {
         // Defuse all HTML entities.
         text = text.replace(/&/g, '&amp;');
 
-        // Change back only well-formed entities in our whitelist:
+        // Change back only well-formed entities in our allowed list:
         // Decimal numeric entities.
         text = text.replace(/&amp;#([0-9]+;)/g, '&#$1');
         // Hexadecimal numeric entities.
@@ -908,6 +908,12 @@ export class CoreH5PContentValidator {
                 type: 'text',
                 label: Translate.instant('core.h5p.title'),
                 placeholder: 'La Gioconda',
+            },
+            {
+                name: 'a11yTitle',
+                type: 'text',
+                label: Translate.instant('core.h5p.a11yTitle:label'),
+                optional: true,
             },
             {
                 name: 'license',
